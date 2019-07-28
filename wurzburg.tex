@@ -59,7 +59,7 @@
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{example}[theorem]{Example}
 \newtheorem{problem}{Problem}
-\newtheorem{exercice}{Exercice}[part]
+\newtheorem{exercise}{Exercise}[part]
 
 \DeclareMathOperator{\Aut}{Aut}
 \DeclareMathOperator{\End}{End} % endomorphism ring
@@ -109,39 +109,6 @@ These lectures notes were written for the summer school
 The presentation is divided in four parts, roughly corresponding to
 the four lectures given. %
 
-\paragraph{Isogeny Based Cryptography} is a very young field, that has
-only begun in the 2000s. %
-It has its roots in \emph{Elliptic Curve Cryptography} (ECC), a
-somewhat older branch of public-key cryptography that was started in
-the 1980s, when Miller and Koblitz first suggested to use elliptic
-curves inside the Diffie-Hellman key exchange protocol (see
-Section~\ref{sec:appl-diff-hellm}). %
-
-ECC only started to gain traction in the 1990s, after Schoof's
-algorithm made it possible to easily find elliptic curves of large
-prime order. %
-It is nowadays a staple in public-key cryptography. %
-The 2000s have seen two major innovations in ECC: the rise of
-\emph{Pairing Based Cryptography} (PBC), epitomized by Joux' one-round
-tripartite Diffie-Hellman key exchange, and the advent of
-Isogeny based cryptography, initiated by the works of Couveignes,
-Teske and Rostovtsev \& Stolbunov. %
-While PBC has attracted most of the attention during the first decade,
-thanks to its revolutionary applications, isogeny based cryptography
-has stayed mostly discrete during this time. %
-It is only in the second half of the 2010 that the attention has
-partly shifted to isogenies. %
-The main reason for this is the sudden realization by the
-cryptographic community of the very possibly near arrival of a
-\emph{general purpose quantum computer}. %
-While the capabilities of such futuristic machine would render all of ECC
-and PBC suddenly worthless, isogeny based cryptography seems to resist
-much better to the cryptanalytic powers of the quantum computer.
-
-In these notes, after a review of the general theory of elliptic
-curves and isogenies, we will present the most important isogeny based
-systems, and their cryptographic properties.
-
 {
   \hypersetup{linkcolor=black}
   \setcounter{tocdepth}{1}
@@ -153,6 +120,1270 @@ systems, and their cryptographic properties.
 \clearpage
 \part{Elliptic curves and isogenies}
 
+In this part, we review the basic and not-so-basic theory of elliptic
+curves. %
+Our goal is to summarize the fundamental theorems necessary to
+understanding the foundations of isogeny based cryptography. %
+A proper treatment of the material covered here would require more
+than one book, we thus skip proofs and lots of details to go straight
+to the useful theorems. %
+The reader in search of a more comprehensive treatment will find more
+details~\cite{silverman:elliptic,silverman:advanced,lang1987elliptic,neukirch2013algebraic}. %
+
+Throughout this part we let $k$ be a field, and we denote by $\bar{k}$
+its algebraic closure. %
+
+\section{Elliptic curves}
+
+Elliptic curves are projective curves of genus 1 with a distinguished
+point. %
+Projective space initially appeared through the process of adding
+\emph{points at infinity}, as a method to understand the geometry of
+projections (also known as \emph{perspective} in classical
+painting). %
+In modern terms, we define projective space as the collection of all
+lines in affine space passing through the origin.
+
+\begin{definition}[Projective space]
+  The \emph{projective space of dimension $n$}, denoted by $\P^n$ or
+  $\P^n(\bar{k})$, is the set of all $(n+1)$-tuples
+  \[(x_0,\dots,x_n) ∈ \bar{k}^{n+1}\] %
+  such that $(x_0,\dots,x_n) ≠ (0,\dots,0)$, taken modulo the
+  equivalence relation
+  \[(x_0,\dots,x_n) \sim (y_0,\dots,y_n)\] %
+  if and only if there exists $λ\in\bar{k}$ such that
+  $x_i=λ_iy_i$ for all $i$.
+\end{definition}
+
+The equivalence class of a projective point $(x_0,\dots,x_n)$ is
+customarily denoted by $(x_0:\cdots:x_n)$. %
+The set of the \emph{$k$-rational points}, denoted by $\P^n(k)$, is
+defined as
+\[\P^n(k) = \left\{(x_0:\cdots:x_n)∈\P^n\;\middle|\; x_i ∈ k \text{ for all $i$}\right\}.\] %
+By fixing arbitrarily the coordinate $x_n=0$, we define a projective
+space of dimension $n-1$, which we call the \emph{hyperplane at
+  infinity}; its points are called \emph{points at infinity}.
+
+From now on we suppose that the field $k$ has characteristic different
+from $2$ and $3$. %
+This has the merit of greatly simplifying the representation of an
+elliptic curve. %
+For a general definition, see~\cite[Chap.~III]{silverman:elliptic}.
+
+\begin{definition}[Weierstrass equation]
+  An \emph{elliptic curve} defined over $k$ is the locus in
+  $\P^2(\bar{k})$ of an equation
+  \begin{equation}
+    \label{eq:weierstrass}
+    Y^2Z = X^3 + aXZ^2 + bZ^3,    
+  \end{equation}
+  with $a,b∈k$ and $4a^3+27b^2\ne0$.
+
+  The point $(0:1:0)$ is the only point on the line $Z=0$; it is
+  called the \emph{point at infinity} of the curve.
+\end{definition}
+
+It is customary to write Eq.~\eqref{eq:weierstrass} in \emph{affine
+  form}. %
+By defining the coordinates $x=X/Z$ and $y=Y/Z$, we equivalently
+define the elliptic curve as the locus of the equation
+\[y^2 = x^3 + ax +b,\]
+plus the point at infinity $\O=(0:1:0)$.
+
+In characteristic different from $2$ and $3$, we can show that any
+projective curve of genus $1$ with a distinguished point $\O$ is
+isomorphic to a Weierstrass equation by sending $\O$ onto the point at
+infinity $(0:1:0)$.
+
+\begin{figure}
+  \centering
+  \hfill
+  %% 
+  \begin{tikzpicture}[domain=-2.4566:4,samples=100,yscale=3/8,xscale=3/4]
+    \draw plot (\x,{sqrt(\x*\x*\x-4*\x+5)});
+    \draw plot (\x,{-sqrt(\x*\x*\x-4*\x+5)});
+
+    \draw[thin,gray,-latex] (0,-7) -- (0,7);
+    \draw[thin,gray,-latex] (-3,0) -- (4,0);
+
+    \draw (-3,1) -- (4,8/3+3);
+    \begin{scope}[every node/.style={draw,circle,inner sep=1pt,fill},cm={1,2/3,0,0,(0,3)}]
+      \node at (-2.287980,0) {};
+      \node at (-0.535051,0) {};
+      \node at (3.267475,0) {};
+    \end{scope}
+    \begin{scope}[every node/.style={yshift=0.3cm},cm={1,2/3,0,0,(0,3)}]
+      \node at (-2.287980,0) {$P$};
+      \node at (-0.535051,0) {$Q$};
+      \node at (3.267475,0) {$R$};
+    \end{scope}
+
+    \draw[dashed] (3.267475,3.267475*2/3+3) -- (3.267475,-3.267475*2/3-3) 
+    node[draw,circle,inner sep=1pt,fill] {}
+    node[xshift=-0.1cm,anchor=east] {$P+Q$};
+  \end{tikzpicture}
+  %% 
+  \hfill
+  %% 
+  \begin{tikzpicture}[domain=-2.4566:4,samples=100,yscale=3/8,xscale=3/4]
+    \draw plot (\x,{sqrt(\x*\x*\x-4*\x+5)});
+    \draw plot (\x,{-sqrt(\x*\x*\x-4*\x+5)});
+
+    \draw[thin,gray,-latex] (0,-7) -- (0,7);
+    \draw[thin,gray,-latex] (-3,0) -- (4,0);
+    
+    \def\c{3.269524}
+    \def\P{-1.398674}
+    \def\R{2.908459}
+    \draw (-3,-1+\c) -- (4,4/3+\c);
+    \begin{scope}[every node/.style={draw,circle,inner sep=1pt,fill},cm={1,1/3,0,0,(0,3.269524)}]
+      \node at (\P,0) {};
+      \node at (\R,0) {};
+    \end{scope}
+    \begin{scope}[every node/.style={yshift=0.3cm},cm={1,1/3,0,0,(0,3.269524)}]
+      \node at (\P,0) {$P$};
+      \node at (\R,0) {$R$};
+    \end{scope}
+
+    \draw[dashed] (\R,\R/3+\c) -- (\R,-\R/3-\c) 
+    node[draw,circle,inner sep=1pt,fill] {}
+    node[xshift=-0.1cm,anchor=east] {$[2]P$};
+  \end{tikzpicture}
+  %%
+  \hfill
+  \strut
+  
+  \caption{An elliptic curve defined over $ℝ$, and the geometric
+    representation of its group law.}
+  \label{fig:weierstrass}
+\end{figure}
+
+Now, since any elliptic curve is defined by a cubic equation, Bezout's
+theorem tells us that any line in $\P^2$ intersects the curve in
+exactly three points, taken with multiplicity. %
+We define a group law by requiring that three co-linear points sum to
+zero. %
+
+\begin{definition}
+  Let $E\;:\;y^2=x^3+ax+b$ be an elliptic curve. Let $P_1=(x_1,y_1)$
+  and $P_2=(x_2,y_2)$ be two points on $E$ different from the point at
+  infinity, then we define a composition law $⊕$ on $E$ as
+  follows:
+  \begin{itemize}
+  \item $P ⊕ \O = \O ⊕ P = P$ for any point $P∈E$;
+  \item If $x_1=x_2$ and $y_1=-y_2$, then $P_1⊕P_2 = \O$;
+  \item Otherwise set
+    \[λ =
+      \begin{cases}
+        \frac{y_2-y_1}{x_2-x_1} &\text{if $P≠Q$,}\\
+        \frac{3x_1^2+a}{2y_1} &\text{if $P=Q$,}
+      \end{cases}
+    \]
+    then the point $(P_1⊕P_2)=(x_3,y_3)$ is defined by
+    \begin{align*}
+      x_3 &= λ^2 - x_1 - x_2,\\
+      y_3 &= -λx_3 - y_1 + λx_1.
+    \end{align*}
+  \end{itemize}
+\end{definition}
+
+It can be shown that the above law defines an Abelian group, thus we
+will simply write $+$ for $⊕$. %
+The $n$-th scalar multiple of a point $P$ will be denoted by $[n]P$. %
+When $E$ is defined over $k$, the subgroup of its \emph{rational
+  points over $k$} is customarily denoted $E(k)$. %
+Figure~\ref{fig:weierstrass} shows a graphical depiction of the group
+law on an elliptic curve defined over $ℝ$.
+
+We now turn to the group structure of elliptic curves. %
+The torsion part is easily characterized.
+
+\begin{proposition}
+  Let $E$ be an elliptic curve defined over an algebraically closed
+  field $k$, and let $m≠0$ be an integer. %
+  The $m$-torsion group of $E$, denoted by $E[m]$, has the following
+  structure:
+  \begin{itemize}
+  \item $E[m] ≃ (ℤ/mℤ)^2$ if the characteristic of $k$ does not divide
+    $m$;
+  \item If $p>0$ is the characteristic of $k$, then 
+    \[E[p^i] ≃
+      \begin{cases}
+        ℤ/p^iℤ & \text{for any $i≥0$, or}\\
+        \{\O\} & \text{for any $i≥0$.}
+      \end{cases}
+    \]
+  \end{itemize}
+\end{proposition}
+\begin{proof}
+  See~\cite[Coro.~6.4]{silverman:elliptic}. For the characteristic $0$
+  case see also Section~\ref{sec:elliptic-curves-over}.
+\end{proof}
+
+For curves defined over a field of positive characteristic $p$, the
+case $E[p]≃ℤ/pℤ$ is called \emph{ordinary}, while the case
+$E[p]≃\{\O\}$ is called \emph{supersingular}. %
+We shall see an alternative characterization of supersingularity in
+the next section.
+
+The free part of the group is much harder to characterize. %
+We have some partial results for elliptic curves over number fields.
+
+\begin{theorem}[Mordell-Weil]
+  Let $k$ be a number field, the group $E(k)$ is finitely generated.
+\end{theorem}
+
+However the exact determination of the rank of $E(k)$ is somewhat
+elusive: we have algorithms to compute the rank of most elliptic
+curves over number fields; however, an exact formula for such rank is
+the object of the
+\href{https://en.wikipedia.org/wiki/Birch_and_Swinnerton-Dyer_conjecture}{\it
+  Birch and Swinnerton-Dyer conjecture}, one of the
+\href{https://en.wikipedia.org/wiki/Millennium_Prize_Problems}{\it
+  Clay Millenium Prize Problems}.
+
+\section{Maps between elliptic curves}
+
+Finally, we focus on maps between elliptic curves. %
+We are mostly interested in maps that preserve both facets of elliptic
+curves: as projective varieties, and as groups. %
+
+We first look into invertible algebraic maps, that is linear changes
+of coordinates that preserve the Weierstrass form of the equation. %
+Because linear maps preserve lines, it is immediate that they also
+preserve the group law. %
+It is easily verified that the only such maps take the form
+\[(x,y) \mapsto (u^2x', u^3y')\] %
+for some $u∈\bar{k}$, thus defining an \emph{isomorphism} between the
+curve $y^2=x^3+au^4x+bu^6$ and the curve $(y')^2 = (x')^3 + ax' +
+b$. %
+Isomorphism classes are traditionally encoded by an invariant, whose
+origins can be traced back to complex analysis.
+
+\begin{proposition}[$j$-invariant]
+  \label{th:j}
+  Let $E:y^2=x^3+ax+b$ be an elliptic curve, and define the
+  \emph{$j$-invariant} of $E$ as
+  \[j(E) = 1728\frac{4a^3}{4a^3+27b^2}.\] %
+  Two curves are isomorphic over the algebraic closure $\bar{k}$ if
+  and only if they have the same $j$-invariant.
+\end{proposition}
+
+Note that if two curves defined over $k$ are isomorphic over
+$\bar{k}$, they are so over an extension of $k$ of degree dividing
+$6$. %
+An isomorphism between two elliptic curves defined over $k$, that is
+itself not defined over $k$ is called a \emph{twist}. %
+Any curve has a \emph{quadratic twist}, unique up to isomorphism,
+obtained by taking $u∉k$ such that $u^2∈k$. %
+The two curves of $j$-invariant $0$ and $1728$ also have \emph{cubic},
+\emph{sextic} and \emph{quartic twists}.
+
+A surjective group morphism, not necessarily invertible, between two
+elliptic curves is called an \emph{isogeny}. %
+It turns out that isogenies are algebraic maps as well.
+
+\begin{theorem}
+  Let $E,E'$ be two elliptic curves, and let $\phi:E→E$ be a map between
+  them. %
+  The following conditions are equivalent:
+  \begin{enumerate}
+  \item $\phi$ is a surjective group morphism,
+  \item $\phi$ is a group morphism with finite kernel,
+  \item $\phi$ is a non-constant algebraic map of projective varieties
+    sending the point at infinity of $E$ onto the point at infinity of
+    $E'$.
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+  See~\cite[III, Th.~4.8]{silverman:elliptic}.
+\end{proof}
+
+Two curves are called \emph{isogenous} if there exists an isogeny
+between them. %
+We shall see later that this is an equivalence relation.
+
+Isogenies from a curve to itself are called \emph{endomorphisms}. %
+The prototypical endomorphism is the multiplication-by-$m$
+endomorphism defined by
+\[[m]\;:\; P \mapsto [m]P.\] %
+Its kernel is exactly the $m$-th torsion subgroup $E[m]$. %
+
+Since they are algebraic group morphisms, we can define addition of
+isogenies by $(ϕ+ψ)(P) = ϕ(P)+ψ(P)$, and the resulting map is still an
+isogeny. %
+Thus, by including the constant map that sends every point to the
+point at infinity, the set of isogenies $E\to E'$ forms a group. %
+Additionally, endomorphisms $E\to E$ support composition, distributing
+over addition, hence the set of all endomorphisms forms a ring,
+denoted by $\End(E)$.%
+\footnote{In short, isogenies are the morphisms in the Abelian
+  category of elliptic curves.}
+
+Since each $m∈ℤ$ defines a different multiplication-by-$m$
+endomorphism, clearly $ℤ⊂\End(E)$. %
+But can $\End(E)$ be larger? %
+We shall now give a complete characterization of the endomorphism ring
+for any elliptic curve.
+
+\begin{definition}[Order]
+  \label{def:order}
+  Let $K$ be a finitely generated $ℚ$-algebra. %
+  An \emph{order} $\O⊂K$ is a subring of $K$ that is a finitely
+  generated $ℤ$-module, and that contains a $ℚ$-basis for $K$.
+\end{definition}
+
+The prototypical example of order is the ring of integers $\O_K$ of a
+number field $K$. %
+It turns out that $\O_K$ is the \emph{maximal order} of $K$, i.e., it
+contains any other order of $K$. %
+We shall discuss this case in depth in Section~\ref{sec:compl-mult}.
+
+\begin{definition}[Quaternion algebra]
+  A \emph{quaternion algebra} is an algebra of the form
+  \[K = ℚ + αℚ + βℚ + αβℚ,\]
+  where the generators satisfy the relations
+  \[α^2,β^2∈ℚ, \quad α^2<0, \quad β^2 < 0, \quad βα=-αβ.\]
+\end{definition}
+
+\begin{theorem}[Deuring]
+  Let $E$ be an elliptic curve defined over a field $k$ of
+  characteristic $p$. %
+  The ring $\End(E)$ is isomorphic to one of the following:
+  \begin{itemize}
+  \item $ℤ$, only if $p=0$;
+  \item An order $\O$ in a quadratic imaginary field (a number field
+    of the form $ℚ(\sqrt{-D})$ for some $D>0$); in this case we say
+    that $E$ has \emph{complex multiplication} by $\O$;
+  \item Only if $p>0$, a maximal order in a quaternion algebra
+    ramified at $p$ and $∞$; in this case we say that $E$ is
+    \emph{supersingular}.
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+  See~\cite[III, Coro.~9.4]{silverman:elliptic}
+  and~\cite{kohel}.
+\end{proof}
+
+In positive characteristic, a curve that is not supersingular is
+called \emph{ordinary}; we shall see that it necessarily has complex
+multiplication. %
+
+
+
+\section{Elliptic curves over $ℂ$}
+\label{sec:elliptic-curves-over}
+
+To better understand elliptic curves and their morphisms, we take a
+moment now to specialize them to the complex numbers.
+
+\begin{definition}[Complex lattice]
+  A \emph{complex lattice} $Λ$ is a discrete subgroup of $ℂ$ that
+  contains an $ℝ$-basis of $ℂ$.
+\end{definition}
+
+Explicitly, a complex lattice is generated by a \emph{basis}
+$(ω_1,ω_2)$, such that $ω_1≠λω_2$ for any $λ∈ℝ$, as
+\[Λ = ω_1ℤ + ω_2ℤ.\] %
+Up to exchanging $ω_1$ and $ω_2$, we can assume that $\im(ω_1/ω_2)>0$;
+we then say that the basis has \emph{positive orientation}. %
+A positively oriented basis is obviously not unique, though.
+
+\begin{proposition}
+  \label{th:basis-change}
+  Let $Λ$ be a complex lattice, and let $(ω_1,ω_2)$ be a positively
+  oriented basis, then any other positively oriented basis
+  $(ω_1',ω_2')$ is of the form
+  \begin{align*}
+    ω_1' &= aω_1 + bω_2,\\
+    ω_1' &= cω_1 + dω_2,
+  \end{align*}
+  for some matrix
+  $\left(\begin{smallmatrix}a&b\\c&d\end{smallmatrix}\right)∈\SL_2(ℤ)$.
+\end{proposition}
+\begin{proof}
+  See~\cite[I, Lem.~2.4]{silverman:advanced}.
+\end{proof}
+
+\begin{definition}[Complex torus]
+  Let $Λ$ be a complex lattice, the quotient $ℂ/Λ$ is called a
+  \emph{complex torus}.
+\end{definition}
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[scale=2]
+    \axes{-1}{3.5}{-0.5}{3}
+
+    \begin{scope}[/lattice={1}{0.2}{0.4}{0.7}]
+      \draw[fill,black!10] (0,0) -- (1,0) -- (1,1) -- (0,1) -- (0,0);
+      \node at (0.5,0.5) {$ℂ/Λ$};
+      \node at (0.9,-0.1) {$ω_2$};
+      \node at (-0.1,0.9) {$ω_1$};
+
+      \lattice{-3}{4}
+    \end{scope}  
+  \end{tikzpicture}
+
+  \caption{A complex lattice (black dots) and its associated complex
+    torus (grayed \emph{fundamental domain}).}
+  \label{fig:lattice}
+\end{figure}
+
+A convex set of class representatives of $ℂ/Λ$ is called a
+\emph{fundamental parallelogram}. %
+Figure~\ref{fig:lattice} shows a complex lattice generated by a
+(positively oriented) basis $(ω_1,ω_2)$, together with a fundamental
+parallelogram for $ℂ/(ω_1,ω_2)$. %
+The additive group structure of $ℂ$ carries over to $ℂ/Λ$, and can be
+graphically represented as operations on points inside a fundamental
+parallelogram. %
+This is illustrated in Figure~\ref{fig:lattice-arith}.
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[scale=1.8]
+    \axes{-0.5}{3.5}{-0.5}{3}
+
+    \begin{scope}[/lattice={1}{0.2}{0.4}{0.7}]
+      \lattice{-3}{4}
+
+      \node[red] at (0.7,0.65) {$a$}; 
+      \node[draw,circle,inner sep=1pt,fill,red] at (0.8,0.5) {};
+      \node[red] at (0.2,0.9) {$b$}; 
+      \node[draw,circle,inner sep=1pt,fill,red] at (0.3,0.7) {};
+      
+      \node[draw,circle,inner sep=1pt,fill,red] at (1.1,1.2) {};
+
+      \draw[red,thin,dotted] (0,0) -- (0.8,0.5) -- (1.1,1.2)
+      (0,0) -- (0.3,0.7) -- (1.1,1.2);          
+
+      \node[red] at (0.2,0.3) {$a+b$}; 
+      \node[draw,circle,inner sep=1pt,fill,red] at (0.1,0.2) {};
+    \end{scope}  
+  \end{tikzpicture}
+  %%
+  \hfill
+  %%
+  \begin{tikzpicture}[scale=1.8]
+    \axes{-0.5}{3.5}{-0.5}{3}
+
+    \begin{scope}[/lattice={1}{0.2}{0.4}{0.7}]
+      \lattice{-3}{4}
+      
+      \node[red,yshift=0.2cm] at (0.8,0.6) {$a$}; 
+      \draw[red] (0.8,0.6) node[fill,circle,inner sep=1pt] {};
+
+      \draw[red,dotted] (0,0) -- (1.6,1.2) node[fill,circle,inner sep=1pt] {} 
+      -- (2.4,1.8) node[fill,circle,inner sep=1pt] {};
+
+      \node[red,yshift=0.3cm] at (0.4,0.8) {$[3]a$}; 
+      \draw[red] (0.4,0.8) node[fill,circle,inner sep=1pt] {};
+    \end{scope}
+  \end{tikzpicture}
+  \caption{Addition (left) and scalar multiplication (right) of points
+    in a complex torus $ℂ/Λ$.}
+  \label{fig:lattice-arith}
+\end{figure}
+
+\begin{definition}[Homothetic lattices]
+  Two complex lattices $Λ$ and $Λ'$ are said to be \emph{homothetic}
+  if there is a complex number $α∈ℂ^{×}$ such that $Λ=αΛ'$.
+\end{definition}
+
+Geometrically, applying a homothety to a lattice corresponds to zooms
+and rotations around the origin. %
+We are only interested in complex tori up to homothety; to classify
+them, we introduce the \emph{Eisenstein series of weight $2k$},
+defined as
+\[G_{2k}(Λ) = \sum_{ω∈Λ\setminus\{0\}}ω^{-2k}.\]
+It is customary to set
+\[g_2(Λ) = 60G_4(Λ), \quad g_3(Λ) = 140G_6(Λ);\] %
+when $Λ$ is clear from the context, we simply write $g_2$ and $g_3$.
+
+\begin{theorem}[Modular $j$-invariant]
+  The \emph{modular $j$-invariant} is the function on complex lattices
+  defined by
+  \[j(Λ) = 1728 \frac{g_2(Λ)^3}{g_2(Λ)^3 - 27g_3(Λ)^2}.\] %
+  Two lattices are homothetic if and only if they have the same
+  modular $j$-invariant.
+\end{theorem}
+\begin{proof}
+  See~\cite[I, Th.~4.1]{silverman:advanced}.
+\end{proof}
+
+It is no chance that the invariants classifying elliptic curves and
+complex tori look very similar. %
+Indeed, we can prove that the two are in one-to-one correspondence.
+
+\begin{definition}[Weierstrass $℘$ function]
+  Let $Λ$ be a complex lattice, the \emph{Weierstrass $℘$ function}
+  associated to $Λ$ is the series
+  \[℘(z;Λ) = \frac{1}{z^2} + \sum_{ω∈Λ\setminus\{0\}} \left(\frac{1}{(z-ω)^2} - \frac{1}{ω^2}\right).\]
+\end{definition}
+
+\begin{theorem}
+  \label{th:weierstrass-p}
+  The Weierestrass function $℘(z;Λ)$ has the following properties:
+  \begin{enumerate}
+  \item It is an \emph{elliptic function} for $Λ$, i.e.
+    $℘(z) = ℘(z+ω)$ for all $z∈ℂ$ and $ω∈Λ$.
+  \item Its Laurent series around $z=0$ is
+    \[℘(z) = \frac{1}{z^2} + \sum_{k=1}^∞(2k+1)G_{2k+2}z^{2k}.\]
+  \item It satisfies the differential equation
+    \[℘'(z)^2 = 4℘(z)^3 - g_2℘(z) - g_3\]
+    for all $z∉Λ$.
+  \item The curve
+    \[E\;:\;y^2=4x^3 - g_2x - g_3\]
+    is an elliptic curve over $ℂ$. The map
+    \begin{align*}
+      ℂ/Λ &\to E(ℂ),\\
+      0 &\mapsto (0:1:0),\\
+      z &\mapsto (℘(z):℘'(z):1)
+    \end{align*}
+    is an isomorphism of Riemann surfaces and a group morphism.
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+  See~\cite[VI, Th.~3.1, Th.~3.5, Prop.~3.6]{silverman:elliptic}.
+\end{proof}
+
+By comparing the two definitions for the $j$-invariants, we see that
+$j(Λ)=j(E)$. %
+So, for any homothety class of complex tori, we have a corresponding
+isomorphism class of elliptic curves. %
+The converse is also true.
+
+\begin{theorem}[Uniformization theorem]
+  Let $a,b∈ℂ$ be such that $4a^3+27b^2≠0$, then there is a unique
+  complex lattice $Λ$ such that $g_2(Λ) = -4a$ and $g_3(Λ) = -4b$.
+\end{theorem}
+\begin{proof}
+  See~\cite[I, Coro.~4.3]{silverman:advanced}.
+\end{proof}
+
+Using the correspondence between elliptic curves and complex tori, we
+now have a new perspective on their group structure. %
+Looking at complex tori, it becomes immediately evident why the
+torsion part has rank $2$, i.e. why $E[m]≃(ℤ/mℤ)^2$. %
+This is illustrated in Figure~\ref{fig:torsion}; in the picture we
+see two lattices $Λ$ and $Λ'$, generated respectively by the black and
+the red dots. %
+The multiplication-by-$m$ map corresponds then to
+\begin{align*}
+  [m] : ℂ/Λ &\to ℂ/Λ',\\
+  z &\mapsto z \bmod Λ';
+\end{align*}
+or equivalently $[m]:z \mapsto mz \bmod Λ$, after applying the
+homothety $mΛ'=Λ$, as expected.
+
+\begin{figure}
+
+  \begin{subfigure}{.45\textwidth}
+    \centering
+    
+    \begin{tikzpicture}[scale=1.2]
+      \axes{-0.3}{4.5}{-0.5}{4};
+
+      \begin{scope}[/lattice={3}{0.6}{1.2}{2.1}]
+        \lattice{-1}{2}
+
+        \foreach \i in {0,...,2} {
+          \foreach \j in {0,...,2} {
+            \draw[red] (\i/3,\j/3) node[fill,circle,inner sep=1pt] {};
+          }
+        }
+        \draw[red] (0,0) -- (1/3,0) node[yshift=0.2cm] {$a$};
+        \draw[red] (0,0) -- (0,1/3) node[yshift=0.2cm] {$b$};
+
+        \draw[blue] (0.8,0.5) node[fill,circle,inner sep=1pt] {}
+        node[yshift=0.2cm] {\scriptsize $z$}
+        (2/15,1/6) node[fill,circle,inner sep=1pt] {}
+        node[yshift=0.2cm] {\scriptsize $3z$};
+      \end{scope}
+    \end{tikzpicture}  
+    \caption{$3$-torsion group on a complex torus (red
+      points), with two generators $a$ and $b$, and action of the
+      multiplication-by-$3$ map (blue dots).}
+    \label{fig:torsion}
+  \end{subfigure}
+  %%
+  \hfill
+  %%
+  \begin{subfigure}{.45\textwidth}
+    \centering
+    \begin{tikzpicture}[scale=1.2]
+      \axes{-0.3}{4.5}{-0.5}{4};
+      
+      \begin{scope}[/lattice={3}{0.6}{1.2}{2.1}]
+        \lattice{-1}{2}
+
+        \draw[red] (0,0) -- (1/3,0) node[yshift=0.3cm] {$a$};
+        \draw[green] (0,0) -- (0,1/3) node[fill,circle,inner sep=1pt] {}
+        node[yshift=0.3cm] {$b$};
+
+        \draw[blue] (0.8,0.5) node[fill,circle,inner sep=1pt] {}
+        node[yshift=0.3cm] {$z$};
+      \end{scope}
+      
+      \begin{scope}[/lattice={1}{0.2}{1.2}{2.1}]
+        \begin{scope}[opacity=0.5,red]
+          \lattice[1pt]{-3}{5}
+        \end{scope}
+
+        \draw[blue] (0.4,0.5) node[fill,circle,inner sep=1pt] {}
+        node[yshift=0.3cm] {$ϕ(z)$};
+      \end{scope}
+    \end{tikzpicture}
+    
+    \caption{Isogeny from $ℂ/Λ$ (black dots) to $ℂ/Λ'$ (red dots)
+      defined by $ϕ(z)=z \bmod Λ'$. The kernel of $ϕ$ is contained
+      in $(ℂ/Λ)[3]$ and is generated by $a$. The kernel of the dual
+      isogeny $\hat{ϕ}$ is generated by the vector $b$ in $Λ'$.}
+    \label{fig:isogeny}
+  \end{subfigure}
+  
+  \caption{Maps between complex tori.}
+\end{figure}
+
+Within this new perspective, isogenies are a mild generalization of
+scalar multiplications. %
+Whenever two lattices $Λ,Λ'$ verify $αΛ⊂Λ'$, there is a well defined
+map
+\begin{align*}
+   ϕ_α : ℂ/Λ &\to ℂ/Λ',\\
+  z &\mapsto αz \bmod Λ'
+\end{align*}
+that is holomorphic and also a group morphism. %
+One example of such maps is given in Figure~\ref{fig:torsion}: there,
+$α=1$ and the red lattice strictly contains the black one; the map is
+simply defined as reduction modulo $Λ'$. %
+It turns out that these maps are exactly the isogenies of the
+corresponding elliptic curves.
+
+\begin{theorem}
+  Let $E,E'$ be elliptic curves over $ℂ$, with corresponding lattices
+  $Λ,Λ'$. %
+  There is a bijection between the set of isogenies from $E$ to $E'$
+  and the set of maps $ϕ_α$ for all $α$ such that $αΛ⊂Λ'$.
+\end{theorem}
+\begin{proof}
+  See~\cite[VI, Th.~4.1]{silverman:elliptic}.
+\end{proof}
+
+Looking again at Figure~\ref{fig:torsion}, we see that there is a
+second isogeny $\hat{ϕ}$ from $Λ'$ to $Λ/3$, whose kernel is generated
+by $b∈Λ'$. %
+The composition $\hat{ϕ}∘ϕ$ is an endomorphism of $ℂ/Λ$, up to the
+homothety sending $Λ/3$ to $Λ$, and we verify that it corresponds to
+the multiplication-by-$3$ map. %
+In this example, the kernels of both $ϕ$ and $\hat{ϕ}$ contain $3$
+elements, and we say that $ϕ$ and $\hat{ϕ}$ have \emph{degree} $3$. %
+Although not immediately evident from the picture, this same
+construction can be applied to any isogeny. %
+The isogeny $\hat{ϕ}$ is called the \emph{dual} of $ϕ$. %
+Dual isogenies exist not only in characteristic $0$, but also for any
+base field, as we shall see in Section~\ref{sec:isogenies}.
+
+Under which conditions does an isogeny become an endomorphism? By
+virtue of the last theorem, there is a one-to-one correspondence
+between the endomorphisms $E\to E$ and the complex numbers $α$ such
+that $αΛ⊂Λ$. %
+In general, the only possible choices are given by $α$ an integer,
+corresponding to scalar multiplications. %
+For some lattices, however, something ``special'' happens; we shall
+study this case in Section~\ref{sec:compl-mult}.
+
+
+
+\section{Elliptic curves over finite fields}
+
+In this section we shift our attention to elliptic curves defined over
+a finite field $k$ with $q$ elements, which are the main objects
+manipulated in cryptography. %
+Obviously, the group of $k$-rational points is finite, thus the
+algebraic group $E(\bar{k})$ only contains torsion elements, and we
+have already characterized precisely the structure of the torsion part
+of $E$.
+
+For curves over finite fields, the Frobenius endomorphism plays a very
+special role, and governs much of their structure.
+
+\begin{definition}[Frobenius endomorphism]
+  Let $E$ be an elliptic curve defined over a field with $q$ elements,
+  its \emph{Frobenius endomorphism}, denoted by $π$, is the map that
+  sends
+  \[(X:Y:Z) \mapsto (X^q:Y^q:Z^q).\]
+\end{definition}
+
+\begin{proposition}
+  \label{th:frob}
+  Let $π$ be the Frobenius endomorphism of $E$. Then:
+  \begin{itemize}
+  \item $\ker π = \{\O\}$;
+  \item $\ker (π-1) = E(k)$.
+  \end{itemize}
+\end{proposition}
+
+\begin{theorem}[Hasse]
+  Let $E$ be an elliptic curve defined over a finite field with $q$
+  elements. %
+  Its Frobenius endomorphism $π$ satisfies a quadratic equation
+  \[π^2 - tπ + q = 0,\]
+  for some $|t|≤2\sqrt{q}$.
+\end{theorem}
+\begin{proof}
+  See~\cite[V, Th.~2.3.1]{silverman:elliptic}.
+\end{proof}
+
+The coefficient $t$ in the equation is called the \emph{trace} of
+$π$. %
+By replacing $π=1$ in the equation, we immediately obtain the
+cardinality of $E$ as $\#E(k) = \#\ker(π-1) = q+1-t$. %
+
+\begin{corollary}
+  Let $E$ be an elliptic curve defined over a finite field $k$ with $q$
+  elements, then
+  \[|\#E(k) - q - 1| ≤ 2\sqrt{q}.\]
+\end{corollary}
+
+It turns out that the cardinality of $E$ over its \emph{base field}
+$k$ determines its cardinality over any finite extension of it. %
+This is a special case of Weil's famous conjectures, proven by Weil
+himself in 1949 for Abelian varieties, and more generally by Deligne
+in 1973.
+
+\begin{definition}
+  Let $V$ be a projective variety defined over a finite field $\F_q$,
+  its \emph{zeta function} is the power series
+  \[Z(V/\F_q; T) = \exp\left(\sum_{n=1}^∞\#V(\F_{q^n})\frac{T^n}{n}\right).\]
+\end{definition}
+
+\begin{theorem}
+  \label{th:weil}
+  Let $E$ be an elliptic curve defined over a finite field
+  $\F_q$, and let $\#E(\F_q)=q+1-a$. Then
+  \[Z(E/\F_q;T) = \frac{1-aT+qT^2}{(1-T)(1-qT)}.\]
+\end{theorem}
+\begin{proof}
+  See~\cite[V, Th.~2.4]{silverman:elliptic}.
+\end{proof}
+
+
+
+\section{Isogenies}
+\label{sec:isogenies}
+
+We now look more in detail at isogenies of elliptic curves. %
+We start with some basic definitions.
+
+\begin{definition}[Degree, separability]
+  Let $ϕ:E\to E'$ be an isogeny defined over a field $k$, and let
+  $k(E),k(E')$ be the function fields of $E,E'$. %
+  By composing $\phi$ with the functions of $k(E')$, we obtain a
+  subfield of $k(E)$ that we denote by $ϕ^\ast(k(E'))$.
+
+  \begin{enumerate}
+  \item The \emph{degree} of $ϕ$ is defined as
+    $\deg ϕ = [k(E):ϕ^\ast(k(E'))]$; it is always finite.
+  \item $ϕ$ is said to be \emph{separable}, \emph{inseparable}, or
+    \emph{purely inseparable} if the extension of function fields is.
+  \item If $ϕ$ is separable, then $\deg ϕ = \#\ker ϕ$.
+  \item If $ϕ$ is purely inseparable, then $\deg ϕ$ is a power of the
+    characteristic of $k$.
+  \item Any isogeny can be decomposed as a product of a separable and
+    a purely inseparable isogeny.
+  \end{enumerate}
+\end{definition}
+\begin{proof}
+  See~\cite[II, Th.~2.4]{silverman:elliptic}.
+\end{proof}
+
+In practice, most of the time we will be considering separable
+isogenies, and we can take $\deg ϕ ≡ \#\ker ϕ$ as the definition of
+the degree. %
+Notice that in this case $\deg ϕ$ is the size of any fiber of $ϕ$. %
+
+\begin{example}
+  The map $ϕ$ from the elliptic curve $y^2=x^3+x$ to $y^2=x^3-4x$
+  defined by
+  \begin{equation}
+    \label{eq:isog-example}
+    \begin{aligned}
+      ϕ(x,y) &= \left(\frac{x^2+1}{x},y\frac{x^2-1}{x^2}\right),\\
+      ϕ(0,0) &= ϕ(\O) = \O
+    \end{aligned}
+  \end{equation}
+  is a separable isogeny between curves defined over $ℚ$. %
+  It has degree $2$, and its kernel is generated by the point
+  $(0,0)$. %
+
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[x=0.03\textwidth,y=0.03\textwidth]
+      \begin{scope}
+        \node[anchor=center] at (0,7) {$E \;:\; y^2 = x^3 + x$};
+
+        \draw[thin,gray] (0,-6) -- (0,6);
+        \draw[thin,gray] (-6,0) -- (6,0);
+
+        \foreach \x/\y in {0/0,5/3,-4/3,-3/5,-2/1,-1/3} {
+          \draw[blue,fill] (\x,\y) circle (0.2) node(E_\x_\y){}
+          (\x,-\y) circle (0.2) node(E_\x_-\y){};
+        }
+      \end{scope}
+
+      \draw[black!10!white,thick] (8,-7) -- +(0,14);
+      
+      \begin{scope}[shift={(16,0)}]
+        \node at (0,7) {$E' \;:\; y^2 = x^3 - 4x$};
+
+        \draw[thin,gray] (0,-6) -- (0,6);
+        \draw[thin,gray] (-6,0) -- (6,0);
+
+        \foreach \x/\y in {0/0,2/0,3/2,4/2,6/4,-2/0,-1/5} {
+          \draw[color=blue,fill] (\x,\y) circle (0.2) node(F_\x_\y){}
+          (\x,-\y) circle (0.2) node(F_\x_-\y){};
+        }
+      \end{scope}
+
+      \begin{scope}[color=red,-latex,dashed]
+        \path
+        (E_5_3) edge (F_3_2)
+        (E_-4_3) edge (F_4_-2)
+        (E_-3_5) edge (F_4_2)
+        (E_-2_1) edge (F_3_-2)
+        (E_-1_3) edge (F_-2_0);
+        \path
+        (E_5_-3) edge (F_3_-2)
+        (E_-4_-3) edge (F_4_2)
+        (E_-3_-5) edge (F_4_-2)
+        (E_-2_-1) edge (F_3_2)
+        (E_-1_-3) edge (F_-2_0);
+      \end{scope}
+    \end{tikzpicture}
+    \caption{The isogeny $(x,y) \mapsto \bigl((x^2+1)/x,\;y(x^2-1)/x^2\bigr)$,
+      as a map between curves defined over $\F_{11}$.}
+    \label{fig:isog-example}
+  \end{figure}
+
+  Plotting the isogeny~\eqref{eq:isog-example} over $ℝ$ would be
+  cumbersome, however, since the curves are defined by integer
+  coefficients, we may reduce the equations modulo a prime $p$, then
+  the isogeny descends to an isogeny of curves over $\F_p$. %
+  Figure~\ref{fig:isog-example} plots the action of the isogeny after
+  reduction modulo $11$. %
+  A red arrow indicates that a point of the left curve is sent onto a
+  point on the right curve; the action on the point in $(0,0)$, going to
+  the point at infinity, is not shown. %
+  We observe a symmetry with respect to the $x$-axis, a consequence of
+  the fact that $ϕ$ is a group morphism; and, by looking closer, we may
+  also notice that collinear points are sent to collinear points, also a
+  necessity for a group morphism. %
+
+  It is evident that the isogeny is $2$-to-$1$, however we are unable to
+  see all fibers over $\F_p$, because the isogeny is only surjective
+  over the algebraic closure. %
+  This is not dissimilar from the way power-by-$n$ maps act on the
+  multiplicative group $k^×$ of a field $k$: the map $x↦x^2$, for
+  example, is a $2$-to-$1$ (algebraic) group morphism on
+  $\F_{11}^\times$, and those elements that have no preimage, the
+  non-squares, will have exactly two square roots in $\F_{11^2}$, and so
+  on. %
+\end{example}
+
+The most unique property of separable isogenies is that they are 
+entirely determined by their kernel. %
+
+\begin{proposition}
+  Let $E$ be an elliptic curve defined over an algebraically closed
+  field, and let $G$ be a finite subgroup of $E$. %
+  There is a curve $E'$, and a separable isogeny $ϕ$, such that
+  $\ker ϕ=G$ and $ϕ:E→ E'$. %
+  Furthermore, $E'$ and $ϕ$ are unique up to composition with an
+  isomorphism $E'≃E''$. %
+\end{proposition}
+
+Said otherwise, for any finite subgroup $G⊂E$, we have an exact
+sequence of algebraic groups
+\begin{equation*}
+  0 → G → E \overset{ϕ}{→} E' → 0.
+\end{equation*}
+Uniqueness up to isomorphisms justifies the notation $E/G$ for the
+isomorphism class of the image curve $E'$. %
+Conversely, since any non-constant morphism of elliptic curves
+necessarily has finite kernel, we have a bijection between the finite
+subgroups of a curve $E$ and the isogenies with domain $E$ up to
+isomorphisms. %
+This correspondence is rich in consequences: it is an easy exercise to
+prove the following useful facts. %
+
+\begin{corollary}\ 
+  \label{coro:isog-basic}
+  \begin{enumerate}
+  \item Any isogeny of elliptic curves can be decomposed as a product
+    of prime degree isogenies.
+  \item Let $E$ be defined over an algebraically closed field $k$, let
+    $ℓ$ be a prime different from the characteristic of $k$, then
+    there are exactly $ℓ+1$ isogenies of degree $ℓ$ with domain $E$,
+    up to isomorphism.
+  \end{enumerate}
+\end{corollary}
+
+Slightly more work is required to prove the following, fundamental,
+theorem (the difficulty comes essentially from the inseparable part,
+see~\cite[III.6.1]{silverman:elliptic} for a detailed proof).
+
+\begin{theorem}[Dual isogeny theorem]
+  Let $ϕ:E→ E'$ be an isogeny of degree $m$. %
+  There is a unique isogeny $\hat{ϕ}:E'→ E$ such that
+  \[\hat{ϕ}∘ϕ = [m]_E, \quad ϕ∘\hat{ϕ} = [m]_{E'}.\] %
+  $\hat{ϕ}$ is called the \emph{dual isogeny of $ϕ$}; it has the
+  following properties:
+  
+  \begin{enumerate}
+  \item $\hat{ϕ}$ has degree $m$;
+  \item $\hat{ϕ}$ is defined over $k$ if and only if $ϕ$ is;
+  \item $\widehat{ψ∘ϕ} = \hat{ϕ}∘\hat{ψ}$ for any isogeny $ψ:E'→ E''$;
+  \item $\widehat{ψ+ϕ} = \hat{ψ} + \hat{ϕ}$ for any isogeny $ψ:E→ E'$;
+  \item $\deg ϕ = \deg\hat{ϕ}$;
+  \item $\hat{\hat{ϕ}} = ϕ$.
+  \end{enumerate}
+\end{theorem}
+
+The computational counterpart to the kernel-isogeny correspondence is
+given by Vélu's much celebrated formulas. %
+
+\begin{proposition}[{Vélu~\cite{velu71}}]
+  \label{th:velu}
+  Let $E:y^2=x^3+ax+b$ be an elliptic curve defined over a field $k$,
+  and let $G⊂E(\bar{k})$ be a finite subgroup. %
+  The separable isogeny $ϕ:E→ E/G$, of kernel $G$, can be written as
+  \begin{equation*}
+    ϕ(P) = \left(
+      x(P) + \sum_{Q∈G\setminus\{\O\}}x(P+Q)-x(Q),\\
+      y(P) + \sum_{Q∈G\setminus\{\O\}}y(P+Q)-y(Q)
+    \right);
+  \end{equation*} %
+  and the curve $E/G$ has equation $y^2=x^3+a'x+b'$, where
+  \begin{align*}
+    a' &= a - 5\sum_{Q∈G\setminus\{\O\}}(3x(Q)^2+a),\\
+    b' &= b - 7\sum_{Q∈G\setminus\{\O\}}(5x(Q)^3+3ax(Q)+2b).
+  \end{align*}
+\end{proposition}
+
+
+
+\section{Complex multiplication}
+\label{sec:compl-mult}
+
+We conclude with one of the most power tools for the study of isogeny
+graphs: the theory of \emph{complex multiplication}. %
+Our goal is to characterize elliptic curves with endomorphism rings
+larger than $ℤ$; to do so, we start from elliptic curves defined over
+the complex numbers. %
+But first, we need to recall some basic definitions from algebraic
+number theory; for a more detailed treatment, see~\cite{langANT}.
+
+An \emph{quadratic number field} is a quadratic extension $K$ of the
+rationals; it is called \emph{real} if there exists an embedding
+$K⊂ℝ$, \emph{imaginary} otherwise. %
+All such fields can be expressed as $ℚ(\sqrt{d})$ for some integer
+$d$, the \emph{Gaussian integers} $ℚ(i)$ being a typical example of an
+imaginary one. %
+
+\begin{definition}[Discriminant]
+  Let $d$ be a square free integer, the \emph{discriminant} of the
+  quadratic number field $ℚ(\sqrt{d})$ is $d$ if $d=1\bmod 4$, and
+  $4d$ otherwise.
+\end{definition}
+
+An integer $Δ$ that is the discriminant of a quadratic number field is
+called a \emph{fundamental discriminant}.
+
+\begin{definition}[Ring of integers]
+  Let $K$ be a number field, an \emph{algebraic integer} of $K$ is an
+  element $α∈K$ that is root of an irreducible monic polynomial with
+  integer coefficients. %
+  The algebraic integers of $K$ form a ring, called the \emph{ring of
+    integers} of $K$.
+\end{definition}
+
+For example, $ℤ[i]$ is the ring of integers of $ℚ(i)$; more generally,
+if $Δ$ is a fundamental discriminant, the ring of integers of
+$ℚ(\sqrt{Δ})$ is $ℤ[δ]$, where $δ=(Δ+\sqrt{Δ})/2$. %
+By Definition~\ref{def:order}, an order of a quadratic field $K$ is a
+subring of $K$ that is a $ℤ$-module of rank $2$. %
+The ring of integers $\O_K$ of $K$ fits the bill: it always has
+$(1,δ)$ as \emph{integral basis}, i.e., as a set of $ℤ$-module
+generators. %
+Furthermore, it is easy to prove that any other order is contained in
+$\O_K$; for this reason we will some times call it the \emph{maximal
+  order} of $K$. %
+More precisely, we can prove the following.
+
+\begin{proposition}
+  Let $K$ be a quadratic number field, and let $\O_K$ be its ring of
+  integers. %
+  Any order $\O⊂K$ can be written as $\O=ℤ+f\O_K$ for an integer $f$,
+  called the \emph{conductor} of $\O$. %
+  If $Δ_K$ is the discriminant of $K$, the \emph{discriminant} of $\O$
+  is $f^2Δ_K$.
+
+  If $\O,\O'$ are two orders of discriminants $Δ,Δ'$, then $\O⊂\O'$ if
+  and only if $Δ'|Δ$.
+\end{proposition}
+
+When $K$ is imaginary quadratic, any order $\O⊂K⊂ℂ$ is a complex
+lattice by definition. %
+We now define a broader class of algebraic lattices, that are not
+necessarily rings.
+
+\begin{definition}[Fractional ideal]
+  Let $\O$ be an order of a number field $K$. %
+  A \emph{(fractional) $\O$-ideal} $\a$ is a finitely generated
+  non-zero $\O$-submodule of $K$. %
+  
+  If $\a$ is generated by a single element, then it is called
+  \emph{principal}. %
+  If $\a⊂\O$, then it is called an \emph{integral} ideal.
+
+  An $\O$-ideal $\a$ is \emph{invertible} if there exists another
+  ideal $\a^{-1}$ such that $\a\a^{-1}=\a^{-1}\a=\O$. %
+  If $\O$ is the maximal order of $K$, then any $\O$-ideal is
+  invertible.
+\end{definition}
+
+When $\O$ is the maximal order, we often omit specifying the order,
+and simply speak of (fractional) ideals of $K$. %
+
+Now, let $K$ be a quadratic imaginary field. %
+Let $Λ$ be a complex lattice such that $Λ⊂K$, and define its order
+$\O_Λ$ to be
+\begin{equation}
+  \label{eq:lattice-order}
+  \O_Λ = \{ α ∈ K \;\mid\; αΛ ⊂ Λ \}.
+\end{equation}
+It is clear that $\O_Λ$ is a ring, and it is easy to show that it is
+an order of $K$, and thus that $Λ$ is a fractional $\O_Λ$-ideal. %
+Using Theorem~\ref{th:weierstrass-p} we associate to $Λ$ a complex
+elliptic curve $E_Λ$; but then, by definition, $\O_Λ≃\End(E_Λ)$. %
+Said otherwise, $E_Λ$ \emph{complex multiplication} by $\O_Λ$.
+
+We have thus found a way to construct elliptic curves over the complex
+numbers with complex multiplication by a specified order. %
+Conversely, every curve with complex multiplication arises this way. %
+To show this, we look at the set of all isomorphism classes of
+elliptic curves with complex multiplication by a specified order $\O$,
+which we will denote by $\Ell(\O)$. %
+Because homothetic lattices give rise to isomorphic curves, fractional
+ideals $\a$ and $c\a$ will be associated to isomorphic curves $E_\a$
+and $E_{c\a}$ as long as $c≠0$. %
+This justifies looking at fractional ideals modulo principal ideals.
+
+\begin{definition}[Ideal class group]
+  Let $\O$ be an order of a number field $K$. %
+  Let $\mathcal{I}(\O)$ be the group of invertible fractional
+  $\O$-ideals, and let $\mathcal{P}(\O)$ be the group of principal
+  ideals. %
+
+  The \emph{ideal class group} of $\O$ is the quotient group
+  \[\Cl(\O) = \mathcal{I}(\O)/\mathcal{P}(\O).\]
+  It is a finite Abelian group; its order is called the \emph{class
+    number} of $\O$, and denoted by $h(\O)$.
+\end{definition}
+
+When $\O$ is the maximal order, $\Cl(\O)$ is also called the class
+group of $K$. %
+The class group is a fundamental object in \emph{class field theory}:
+when $\O$ is the maximal order, it is isomorphic to the Galois group
+of the maximal unramified Abelian extension of $K$, also called the
+\emph{Hilbert class field} of $K$; more generally, non-maximal orders
+are connected to ramified Abelian extensions of $K$. %
+The next theorem highlights a fundamental connection between the class
+group and the modular $j$-invariant, and thus to elliptic curves with
+complex multiplication by $\O$.
+
+\begin{theorem}
+  Let $\O$ be an order of a number field $K$, and let
+  $\a_1,\dots,\a_{h(\O)}$ be representatives of $\Cl(\O)$. %
+  Then:
+  \begin{itemize}
+  \item $K(j(\a_i))$ is an Abelian extension of $K$;
+  \item The $j(\a_i)$ are all conjugate over $K$;
+  \item The Galois group of $K(j(\a_i))$ is isomorphic to $\Cl(\O)$;
+  \item $[ℚ(j(\a_i)):ℚ] = [K(j(\a_i)):K] = h(\O)$;
+  \item The $j(\a_i)$ are integral, their minimal polynomial is called
+    the \emph{Hilbert class polynomial} of $\O$;
+  \item $\Cl(\O)$ acts freely and transitively on $\Ell(\O)$, in
+    particular $\#\Ell(\O) = h(\O)$.
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+  See~\cite[Ch.~II]{silverman:advanced} and~\cite[Ch.~10]{lang1987elliptic}.
+\end{proof}
+
+Hence, we have completely characterized all elliptic curves with
+complex multiplication by an order $\O$, up to isomorphism; in
+particular, we now know that $j$-invariants with complex
+multiplication (sometimes called \emph{singular $j$-invariants}) are
+algebraic integers. %
+In the next part, we shall say more on how $\Cl(\O)$ acts on the set
+$\Ell(\O)$.
+
+\begin{example}
+  Let $\O=ℤ[i]$, so that $\O$ is the ring of integers of $ℚ(i)$. %
+  It was already proven by Gauss that $ℤ[i]$ is a principal ideal
+  domain, and thus that its class group is trivial. %
+  Up to homothety, there is a unique lattice with order $ℤ[i]$, and
+  one such representative is $ℤ[i]$ itself.
+
+  Recall the definition of the Eisenstein series
+  \[G_{2k}(Λ) = \sum_{ω∈Λ\setminus\{0\}} ω^{-2k}.\]
+  But in our case $Λ=ℤ[i]$, thus $iΛ=Λ$, hence
+  \[G_{2k}(Λ) = G_{2k}(iΛ) = i^{-2k}G_{2k}(Λ) = (-1)^kG_{2k}(Λ).\] In
+  particular $G_6(Λ) = - G_6(Λ) = 0$, hence, by the definition of the
+  modular $j$-invariant, $j(ℤ[i]) = 1728$.
+
+  This shows that that the Hilbert class polynomial of $ℤ[i]$ is
+  $X-1728$, and that the curve $E\;:\;y^2=x^3+x$ is the only curve
+  over $ℂ$, up to isomorphism, with complex multiplication by
+  $ℤ[i]$. %
+  In particular, $ℤ[i]$ contains a subgroup of units $\{±1,±i\}$,
+  which correspond to the four automorphisms generated by the map
+  \begin{align*}
+    ι : E &→ E,\\
+    (x,y) &↦ (-x,iy).
+  \end{align*}
+\end{example}
+
+
+\subsection{Complex multiplication for finite fields}
+At this point, we have a complete characterization of complex
+multiplication elliptic curves in characteristic $0$. %
+What happens, then, in positive characteristic $p$? %
+
+There are at least two ways in which we could construct elliptic
+curves over a finite field with endomorphism ring larger than $ℤ$. %
+One is to start from a complex multiplication elliptic curve $E$
+defined over a number field $L$, and then reduce at a place\footnote{A
+  \emph{place} is just a fancy name for a prime ideal of $L$.}
+$\frak{p}$ over $p$. %
+We write $\bar{E} = E(\frak{p})$ for the reduction of $E$ at the place
+$\frak{p}$; if we do this carefully (for example, we must avoid
+singular reductions), non-trivial endomorphisms of $E$ will descend to
+non-trivial endomorphisms of $\bar{E}$. %
+
+\begin{theorem}[Deuring]
+  Let $E$ be an elliptic curve over a number field $L$, with complex
+  multiplication by an order $\O⊂K$. %
+  Let $\frak{p}$ be a place of $L$ over $p$, and assume that $E$
+  has non-singular reduction $\bar{E}$ modulo $\frak{p}$. %
+  The curve $\bar{E}$ is supersingular if and only if $p$ has only one
+  prime of $K$ above it ($p$ ramifies or remains prime in $k$).
+
+  Suppose that $p$ splits completely in $K$. %
+  Let $f$ be the conductor of $\O$, and write $f = p^rf_0$, where
+  $p\nmid f_0$. %
+  Then:
+  \begin{itemize}
+  \item $\bar{E}$ has complex multiplication by the order in $K$ with
+    conductor $f_0$.
+  \item If $p\nmid f$, then the map $ω↦\omega(\frak{p})$ defines an
+    isomorphism of $\End(E)$ and $\End(\bar{E})$.
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+  See~\cite[Ch.~13]{lang1987elliptic}.
+\end{proof}
+
+Note that $p>2$ splits in $K$ if and only if the fundamental
+discriminant $Δ_K$ of $K$ is is a square modulo $p$. %
+To include the case $p=2$, we may use the Kronecker symbol
+$\left(\frac{Δ_K}{p}\right)$, which is equal to $1$ if and only if $p$
+splits. %
+
+\begin{example}
+  We have seen that the elliptic curve $E/ℚ$ defined by $y^2=x^3+x$
+  has complex multiplication by $ℤ[i]$. %
+  Assume $p>2$; by virtue of the theorem above, $E(p)$ is
+  supersingular if and only if $(-4/p)=-1$, i.e., if and only if
+  $p≡3 \bmod 4$.
+
+  In particular, this implies that $-1$ is not a square modulo $p$,
+  and thus that the automorphism $(x,y)↦(-x,iy)$ does not descend to
+  an $\F_p$-automorphism of $E(p)$. %
+  It does, however, descend to an $\F_{p^2}$-automorphism, showing
+  that $\End(E(p))$ is not commutative.
+\end{example}
+
+Another approach is to directly construct a curve $E/\F_q$ so that its
+Frobenius endomorphism is in the desired order. %
+Recall that the Frobenius endomorphism $π$ satisfies a quadratic
+equation
+\[π^2 - tπ + q = 0,\] %
+with discriminant $Δ_π=t^2-4q≤0$. %
+Setting the case $Δ_π=0$ aside, $\End(E)$ necessarily contains a
+subring $ℤ[π]$, isomorphic to an order of $ℚ(\sqrt{Δ_π})$. %
+It turns out that these approach is essentially equivalent to the
+previous one, as a famous theorem shows.
+
+\begin{theorem}[Deuring's lifting theorem]
+  Let $E_0$ be an elliptic curve in characteristic $p$, with an
+  endomorphism $ω_o$ which is not trivial. %
+  Then there exists an elliptic curve $E$ defined over a number field
+  $L$, an endomorphism $ω$ of $E$, and a non-singular reduction of $E$
+  at a place $\frak{p}$ of $L$ lying above $p$, such that $E_0$ is
+  isomorphic to $E(\frak{p})$, and $ω_0$ corresponds to $ω(\frak{p})$
+  under the isomorphism.
+\end{theorem}
+\begin{proof}
+  See~\cite[Ch.~13]{lang1987elliptic}.
+\end{proof}
+
+
+\section*{Exercises}
+
+\begin{exercise}
+  Prove Proposition~\ref{th:j}.
+\end{exercise}
+
+\begin{exercise}
+  Determine all the possible automorphisms of elliptic curves.
+\end{exercise}
+
+\begin{exercise}
+  Prove Proposition~\ref{th:frob}.
+\end{exercise}
+
+\begin{exercise}
+  Using Proposition~\ref{th:weil}, devise an algorithm to effectively
+  compute $\#E(\F_{q^n})$ given $\#E(\F_q)$.
+\end{exercise}
+
+\begin{exercise}
+  Prove Corollary~\ref{coro:isog-basic}
+\end{exercise}
+
+\begin{exercise}
+  Let $K$ be a complex imaginary number field, $Λ⊂K$ a complex
+  lattice, and $\O_Λ$ its order as defined in
+  Eq.~\eqref{eq:lattice-order}. %
+  Prove that $\O_Λ$ is an order of $K$.
+\end{exercise}
+
+\begin{exercise}
+  Let $ω∈ℂ$ be a cube root of unity, the ring $ℤ[ω]$ is also known as
+  the \emph{Eisenstein integers}. %
+  Determine all elliptic curves with complex multiplication by $ℤ[ω]$.
+\end{exercise}
+
+\begin{exercise}
+  Prove that $-163$ is not a square modulo all odd primes
+  $<41$. (Hint: $ℚ(\sqrt{-163})$ has class number $1$).
+\end{exercise}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \clearpage
@@ -162,6 +1393,7 @@ systems, and their cryptographic properties.
 
 \clearpage
 \part{Key exchange}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -184,4 +1416,6 @@ systems, and their cryptographic properties.
 %  LocalWords:  cardinality automorphisms cryptographic cryptosystem
 %  LocalWords:  parallelize homothety Homothetic invariants Expander
 %  LocalWords:  supersingular irreducibility cryptographically torsor
-%  LocalWords:  expander expanders Schreier coprime quaternion
+%  LocalWords:  expander expanders Schreier coprime quaternion monic
+% LocalWords:  morphisms bijection subring morphism surjective
+% LocalWords:  discriminants homothetic

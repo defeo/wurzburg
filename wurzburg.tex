@@ -82,6 +82,8 @@
 \def\tildO{\ensuremath{\tilde{O}}}
 \def\euler{\ensuremath{\varphi}}
 \def\a{\ensuremath{\mathfrak{a}}}
+\def\mat#1{\left(\begin{smallmatrix}#1\end{smallmatrix}\right)}
+\newcommand{\leg}[2]{\left(\frac{#1}{#2}\right)}
 
 \newcommand{\bl}[1]{\textcolor{blue}{#1}}
 \newcommand{\rd}[1]{\textcolor{red}{#1}}
@@ -996,6 +998,7 @@ The most unique property of separable isogenies is that they are
 entirely determined by their kernel. %
 
 \begin{proposition}
+  \label{prop:isoker}
   Let $E$ be an elliptic curve defined over an algebraically closed
   field, and let $G$ be a finite subgroup of $E$. %
   There is a curve $E'$, and a separable isogeny $ϕ$, such that
@@ -1205,6 +1208,7 @@ group and the modular $j$-invariant, and thus to elliptic curves with
 complex multiplication by $\O$.
 
 \begin{theorem}
+  \label{th:compl-mult}
   Let $\O$ be an order of a number field $K$, and let
   $\a_1,\dots,\a_{h(\O)}$ be representatives of $\Cl(\O)$. %
   Then:
@@ -1388,6 +1392,889 @@ previous one, as a famous theorem shows.
 
 \clearpage
 \part{Isogeny graphs}
+
+We now look at isogeny graphs: graphs with isomorphisms classes of
+ellitpic curves for vertices, and isogenies for edges. %
+Depending on the constraints we put on the isogenies, we will get
+graphs with different properties; the most important ones will be
+\emph{isogeny volcanoes}, \emph{Cayley graphs}, and
+\emph{supersingular graphs}.
+
+The classification of isogeny graphs was initiated by
+Mestre~\cite{mestre86}, Pizer~\cite{pizer1,pizer2} and
+Kohel~\cite{kohel}; further algorithmic treatment of graphs of
+ordinary curves, and the now famous name of \emph{isogeny volcanoes}
+was subsequently given by Fouquet and
+Morain~\cite{fouquet+morain02}. %
+We now review the different kinds of graphs.
+
+\section{Isogeny classes}
+
+We have learned previously that being isogenous is an equivalence
+relation,%
+\footnote{Reflexivity and transitivity are obvious, symmetry is
+  guaranteed by the dual isogeny theorem.} %
+it thus makes sens to speak of the \emph{isogeny class} of an elliptic
+curve. %
+Here, we are interested in characterizing these isogeny classes, and
+their connectivity structure. %
+We will mostly focus on isogeny classes over finite fields, however we
+will occasionally mention the complex case.
+
+We start with a theorem that links isogeny classes with the complex
+multiplication theory we previously learned about.
+
+\begin{theorem}[Serre-Tate]
+  Two elliptic curves $E,E'$ with complex or quaternionic
+  multiplication are isogenous if and only if their \emph{endomorphism
+    algebras} $\End(E)⊗ℚ$ and $\End(E')⊗ℚ$ are isomorphic.
+\end{theorem}
+
+In layman terms, this theorem is telling us that:
+\begin{itemize}
+\item Two curves with complex multiplications by $\O$ and $\O'$
+  respectively are isogenous if and only if $\O⊂\O'$ or $\O'⊂\O$; or
+  equivalently if and only if $\O$ and $\O'$ have the same field of
+  fractions.
+\item Any two supersingular curves over a field of characteristic $p$
+  are isogenous.
+\end{itemize}
+
+An easy consequence for the finite field is case is the following.
+
+\begin{corollary}
+  \label{coro:serre-tate}
+  Two elliptic curves $E,E'$ defined over a finite field $k$ are
+  isogenous over $k$ if and only if $\#E(k)=\#E'(k)$.
+\end{corollary}
+
+At this stage, we are only interested in elliptic curves up to
+isomorphism, i.e., $j$-invariants. %
+Accordingly, we say that two $j$-invariants are \emph{isogenous}
+whenever their corresponding curves are. %
+Like we have already done before, we shall use the notation
+$\Ell_q(\O)$ for the subclass of elliptic $j$-invariants over $\bar\F_q$
+with complex multiplication by an order $\O$. %
+
+\section{Graphs}
+
+We recall some basic concepts of graph theory; for simplicity, we will
+restrict to undirected graphs. %
+An undirected graph $G$ is a pair $(V,E)$ where $V$ is a finite set of
+\emph{vertices} and $E⊂V×V$ is a set of unordered pairs called
+\emph{edges}. %
+Two vertices $v,v'$ are said to be \emph{connected by an edge} if
+$\{v,v'\}∈E$. %
+The \emph{neighbors} of a vertex $v$ are the vertices of $V$ connected
+to it by an edge. %
+A \emph{path} between two vertices $v,v'$ is a sequence of vertices
+$v\to v_1\to\cdots\to v'$ such that each vertex is connected to the
+next by an edge. %
+The \emph{distance} between two vertices is the length of the shortest
+path between them; if there is no such path, the vertices are said to
+be at infinite distance. %
+A graph is called \emph{connected} if any two vertices have a path
+connecting them; it is called \emph{disconnected} otherwise. %
+The \emph{diameter} of a connected graph is the largest of all
+distances between its vertices. %
+The \emph{degree} of a vertex is the number of edges pointing to (or
+from) it; a graph where every edge has degree $k$ is called
+\emph{$k$-regular}. %
+The \emph{adjacency matrix} of a graph $G$ with vertex set
+$V=\{v_1,\dots,v_n\}$ and edge set $E$, is the $n×n$ matrix where the
+$(i,j)$-th entry is $1$ if there is an edge between $v_i$ and $v_j$,
+and $0$ otherwise. %
+Because our graphs are undirected, the adjacency matrix is symmetric,
+thus it has $n$ real eigenvalues
+\[λ_1≥\cdots≥λ_n.\] %
+
+\begin{definition}[Isogeny graph]
+  An \emph{isogeny graph} is a (multi)-graph whose vertices are the
+  $j$-invariants of isogenous curves, and whose edges are isogenies
+  between them.
+\end{definition}
+
+
+\begin{figure}
+  \centering
+    \begin{tikzpicture}
+      \begin{scope}[xshift=6cm]
+        \def\crater{7}
+        \foreach \i in {1,...,\crater} {
+          \draw[fill] (360/\crater*\i:1cm) circle (5pt);
+          \draw (360/\crater*\i : 1cm) -- (360/\crater*\i+360/\crater : 1cm);
+          \foreach \j in {-1,1} {
+            \draw[fill] (360/\crater*\i : 1cm) -- (360/\crater*\i + \j*360/\crater/4 : 2cm) circle (3pt);
+            \foreach \k in {-1,0,1} {
+              \draw[fill] (360/\crater*\i + \j*360/\crater/4 : 2cm) --
+              (360/\crater*\i + + \j*360/\crater/4 + \k*360/\crater/6 : 2.5cm) circle (1pt);
+            }
+          }
+        }
+      \end{scope}
+      \begin{scope}[xshift=12cm]
+        \node at (0,2) {$\End(E)$};
+        \draw[fill] (0,1) circle(5pt) node[xshift=0.7cm]{$\O_K$} -- 
+        (0,0) circle(3pt) --
+        (0,-1) circle(1pt) node[xshift=0.7cm]{$ℤ[π]$};
+      \end{scope}
+    \end{tikzpicture}
+  
+    \caption{A volcano of $3$-isogenies (ordinary elliptic curves,
+      Elkies case), and the corresponding tower of orders inside the
+      endomorphism algebra.}
+  \label{fig:volcano}
+\end{figure}
+
+The dual isogeny theorem guarantees that for every isogeny $E\to E'$
+there is a corresponding isogeny $E'\to E$ of the same degree. %
+For this reason, isogeny graphs are usually drawn undirected. %
+Figure~\ref{fig:volcano} shows a typical example of isogeny graph over
+a finite field, where we restrict to isogenies of degree $3$.
+
+
+\section{$ℓ$-isogeny graphs}
+
+When we restrict to isogenies of a prescribed degree $ℓ$, we say that
+two curves are $ℓ$-isogenous; by the dual isogeny theorem, this is a
+symmetric relation. %
+Remark that being $ℓ$-isogenous is also well defined up to
+isomorphism.
+
+Let us start from the local structure: given an elliptic curve $E$ and
+a prime $ℓ$, how many isogenies of degree $ℓ$ have $E$ as domain? %
+Thanks to Proposition~\ref{prop:isoker}, we know this is equivalent to
+asking how many subgroups of order $ℓ$ the curve has; but then we
+immediately know there are exactly $ℓ+1$ isogenies whenever $ℓ≠p$.
+
+For our first example, let us consider a curve $E/ℂ$ \emph{without}
+complex multiplication, i.e., such that $\End(E)=ℤ$.  %
+Its $ℓ$-isogeny graph, i.e., the connected component of the graph of
+$ℓ$-isogenies containing $E$, is $(ℓ+1)$-regular, and cannot have
+loops, otherwise that would provide a non-trivial endomorphism of $E$
+of degree a power of $ℓ$. %
+Hence, the $ℓ$-isogeny graph of $E$ is an infinite $(ℓ+1)$-tree, as
+pictured in Figure~\ref{fig:infinite-tree}. %
+
+\begin{figure}
+  \centering
+    \begin{tikzpicture}[scale=0.6]
+      \def\levels{6}
+      \draw[fill] (0:0) circle (2pt);
+      \foreach \i in {1,...,\levels} {
+        \pgfmathparse{3*2^\i}
+        \let\nodes\pgfmathresult
+        \foreach \j in {1,3,...,\nodes} {
+          \pgfmathparse{\j + (-1)^div(\j,2)}
+          \let\lower\pgfmathresult
+          \ifthenelse{\i = \levels}{
+            \draw[dotted] (360/\nodes*\j : \i) --
+            (360/\nodes*\lower : \i - 1);
+          }{
+            \draw[fill] (360/\nodes*\j : \i) circle (2pt) --
+            (360/\nodes*\lower : \i - 1);
+          }
+        }
+      }
+    \end{tikzpicture}
+  
+    \caption{Infinite $2$-isogeny graph of elliptic curves without
+      complex multiplication.}
+  \label{fig:infinite-tree}
+\end{figure}
+
+When we think about curves over finite fields, however, some of the
+isogenies may only be defined in the algebraic closure, thus we would
+like to restrict our graphs to those isogenies that are defined over
+$\F_q$. %
+Fortunately, we have a Swiss-army-knife to address this question: the
+\emph{Frobenius endomorphism} $π$. %
+Formally, an isogeny $ϕ:E→E/G$ is $\F_q$-rational if and only if
+$π(G)=G$, which suggests looking at the restriction of $π$ to
+$E[ℓ]$. %
+Assume $ℓ≠p$, then $E[ℓ]$ is a group of rank $2$ and $π$ acts on it
+like an element of $\GL_2(\F_ℓ)$, up to conjugation. %
+Clearly, the order of $π$ in $\GL_2(\F_ℓ)$ is the degree of the
+smallest extension of $\F_q$ where all $ℓ$-isogenies of $E$ are
+defined. %
+But we can tell even more by diagonalizing the matrix: $π$ must have
+between $0$ and $2$ eigenvalues, and the corresponding eigenvectors
+define kernels of rational isogenies. %
+We thus are in one of the following four cases\footnote{In the point
+  counting literature, Case~(0) is known as the \emph{Atkin case}, and
+  Case~(2) as the \emph{Elkies case}.}:
+\begin{itemize}
+\item[(0)] $π$ is not diagonalizable in $\F_ℓ$, then $E$ has no
+  $ℓ$-isogenies.
+\item[(1.1)] $π$ has one eigenvalue of (geometric) multiplicity one,
+  i.e., it is conjugate to a non-diagonal matrix
+  $\mat{λ&*\\0&λ}$; then
+  $E$ has one $ℓ$-isogeny.
+\item[(1.2)] $π$ has one eigenvalue of multiplicity two, i.e., it acts
+  like a scalar matrix
+  $\mat{λ&0\\0&λ}$; then
+  $E$ has $ℓ+1$ isogenies of degree $ℓ$.
+\item[(2)] $π$ has two distinct eigenvalues, i.e., it is conjugate to
+  a diagonal matrix
+  $\mat{λ&0\\0&μ}$ with
+  $\lambda\neq\mu$; then $E$ has two $\ell$-isogenies.
+\end{itemize}
+
+Naturally, the number of eigenvalues of $π$ depends on the
+factorization of its characteristic polynomial $x^2-tx+q$ over $\F_ℓ$,
+or equivalently on whether $Δ_π=t^2-4q$ is a square modulo $ℓ$. %
+
+But what about the global structure? %
+Any curve $E/\F_q$ can be seen as the reduction modulo $p$ of some
+curve $E/\bar{ℚ}$; thus it must inherit the connectivity structure of
+the isogeny graph of $E/\bar{ℚ}$. %
+However, there is only a finite number of curves defined over $\F_q$,
+and not all isogenies will be $\F_q$-rational. %
+Thus, the infinite tree must somehow ``fold'' or ``be pruned'' to
+fit inside $\F_q$. %
+
+For example, if $E/\F_q$ is a supersingular curve, we shall see later
+that its isogeny graph ``folds'' to a finite $(ℓ+1)$-regular graph
+containing all supersingular curves, up to $\bar{\F}_q$-isomorphisms.
+
+For the case of ordinary curves, Kohel~\cite{kohel} introduced a
+notion of ``depth'' in the graph. %
+Let $E/\F_q$ have complex multiplication by an order $\O$ in a number
+field $K=ℚ(π)$. %
+Write $\O_K$ for the maximal order of $K$, then we know that
+$ℤ[π] ⊂ \O ⊂ \O_K$. %
+We have already seen that two elliptic curves are isogenous if and
+only if they have the same endomorphism algebra $K$; Kohel refined
+this as follows.
+
+\begin{proposition}[{Kohel~\cite[Prop.~21]{kohel}}]
+  Let $E,E'$ be elliptic curves defined over a finite field, and let
+  $\O,\O'$ be their respective endomorphism rings. %
+  Suppose that there exists an isogeny $ϕ:E→E'$ of prime degree $ℓ$,
+  then $\O$ contains $\O'$ or $\O'$ contains $\O$, and the index of
+  one in the other divides $ℓ$.
+\end{proposition}
+
+For a fixed prime $ℓ$, Kohel defines a curve $E$ to be \emph{at the
+  surface} if $v_ℓ([\O_K:\End(E)])=0$, where $v_ℓ$ is the $ℓ$-adic
+valuation. %
+$E$ is said to be \emph{at depth $d$} if $v_ℓ([\O_K:\End(E)])=d$; the
+maximal depth being $d_{\max}=v_ℓ([\O_K:ℤ[π]])$, curves at depth
+$d_{\max}$ are said to be \emph{at the floor (of rationality)}, and
+$d_{\max}$ is called the \emph{height} of the graph of $E$. %
+Kohel calls then an $ℓ$-isogeny \emph{horizontal} if it goes to a
+curve at the same depth, \emph{descending} if it goes to a curve at
+greater depth, \emph{ascending} if it goes to a curve at lesser
+depth. %
+
+But how many horizontal and vertical $ℓ$-isogenies does a given curve
+have?  %
+The following theorem gives a complete classification, also summarized
+in Table~\ref{tab:periodic-table}. %
+
+\begin{theorem}[{Kohel~\cite{kohel}}]
+  \label{prop:isogeny-count}
+  Let~$E/\F_q$ be an ordinary elliptic curve, $π$ its Frobenius
+  endomorphism, and $Δ_K$ the fundamental discriminant of $ℚ(π)$. %
+  \begin{enumerate}
+  \item If $E$ is not at the floor, there are $ℓ+1$ isogenies of
+    degree $ℓ$ from~$E$, in total.
+  \item If $E$ is at the floor, there are no descending $ℓ$-isogenies
+    from~$E$.
+  \item If $E$ is at the surface, then there are
+    $\left(\frac{Δ_K}{ℓ}\right)+1$~horizontal $ℓ$-isogenies from~$E$
+    (and no ascending $ℓ$-isogenies).
+  \item If $E$ is not at the surface, there are no horizontal
+    $ℓ$-isogenies from~$E$, and one ascending $ℓ$-isogeny.
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+  See~\cite[Prop.~21]{kohel}, or~\cite{defeo-hdr}.
+\end{proof}
+
+\begin{table}
+  \centering
+  \def\arraystretch{1.3}
+  \begin{tabular}{c | c | c | c c c}
+    \multicolumn{3}{c|}{} & \multicolumn{3}{c}{Isogeny types}\\
+    \multicolumn{3}{c|}{} & $→$ & $↑$ & $↓$\\
+    \hline
+    $v_ℓ(Δ_π/Δ_K)=0$ & $ℓ\nmid[\O_K:\O]]$ & $ℓ\nmid[\O:ℤ[π]]$ & $1+\leg{Δ_K}{ℓ}$& &\\
+    \hline
+    & $ℓ\nmid[\O_K:\O]]$ & $ℓ\mid[\O:ℤ[π]]$ &$1+\leg{Δ_K}{ℓ}$& &$ℓ-\leg{Δ_K}{ℓ}$\\
+    $v_ℓ(Δ_π/Δ_K)>1$ & $ℓ\mid[\O_K:\O]]$ & $ℓ\mid[\O:ℤ[π]]$ &  &$1$&$ℓ$\\
+    & $ℓ\mid[\O_K:\O]]$ & $ℓ\nmid[\O:ℤ[π]]$ & &$1$& 
+  \end{tabular}
+  \caption{Number and types of $ℓ$-isogenies, according to splitting
+    type of the characteristic polynomial of $π$.}
+  \label{tab:periodic-table}
+\end{table}
+
+This theorem shows that, away from the surface, isogeny graphs just
+look like $ℓ$-regular complete trees of bounded height, with $ℓ$
+descending isogenies at every level except the floor. %
+However, the surface has a more varied structure:
+\begin{itemize}
+\item[(0)] If $\leg{Δ_K}{ℓ}=-1$, there are no horizontal isogenies:
+  the isogeny graph is just a complete tree of degree $ℓ+1$ (in the
+  graph theoretic sense) at each level but the last. %
+  We call this the \emph{Atkin case}, as it is an extension of the
+  Atkin case in the SEA point counting algorithm.
+\item[(1)] If $\leg{Δ_K}{ℓ}=0$, there is exactly one horizontal
+  isogeny $ϕ:E→E'$ at the surface. %
+  Since $E'$ also has one horizontal isogeny, it necessarily is
+  $\hat{ϕ}$, so the surface only contains two elliptic curves, each
+  the root of a complete tree. %
+  We call this the \emph{ramified case}.
+\item[(2)] The case $\leg{Δ_K}{ℓ}=1$ is arguably the most interesting
+  one. %
+  Each curve at the surface has exactly two horizontal isogenies, thus
+  the subgraph made by curves on the surface is two-regular and
+  finite, i.e., a cycle. %
+  Below each curve of the surface there are $ℓ-1$ curves, each the
+  root of a complete tree. %
+  We call this the \emph{Elkies case}, again by extension of point
+  counting. %
+\end{itemize}
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \begin{scope}
+      \draw[fill] (0,0) circle (2pt)
+      -- (-1,-1) circle (2pt)
+      (0,0) -- (0,-1) circle (2pt)
+      (0,0) -- (1,-1) circle (2pt);
+      \node at (0,-2) {Atkin: $\left(\frac{Δ_K}{ℓ}\right) = -1$};
+    \end{scope}    
+
+    \begin{scope}[xshift=3.5cm]
+      \draw[fill] (0,0) circle (2pt)
+      -- (-0.5,-1) circle (2pt)
+      (0,0) -- (0.5,-1) circle (2pt)
+      (0,0) -- (2,0) circle (2pt)
+      -- (1.5,-1) circle (2pt)
+      (2,0) -- (2.5,-1) circle (2pt);
+      \node at (1,-2) {ramified: $\left(\frac{Δ_K}{ℓ}\right) = 0$};
+    \end{scope}
+    
+    \begin{scope}[xshift=9cm]
+      \draw[fill] (-0.8,0) node[coordinate] (A) {} circle (2pt)
+      -- +(0,-1) circle (2pt)
+      (0,-0.3) node[coordinate] (B) {} circle (2pt)
+      -- +(0,-1) circle (2pt)
+      (0.8,0) node[coordinate] (C) {} circle (2pt)
+      -- +(0,-1) circle (2pt);
+      \draw[bend right=20]
+      (A) edge (B)
+      (B) edge (C)
+      (C) edge[dashed,bend right=90] (A);
+      \node at (0,-2) {Elkies: $\left(\frac{Δ_K}{ℓ}\right) = +1$};
+    \end{scope}
+  \end{tikzpicture}
+  \caption{The three shapes of volcanoes of $2$-isogenies of height 1.}
+  \label{fig:volcanology}
+\end{figure}
+
+The three cases are summarized in Figure~\ref{fig:volcanology}. %
+Their looks have justified the name if \emph{isogeny volcanoes} for
+them~\cite{fouquet+morain02}; in the Elkies case, we call
+\emph{crater} the cycle at the surface.
+
+We are left with one last question: how large are these graphs? %
+Theorem~\ref{th:compl-mult} tells us that for any order $\O$ there are
+exactly $h(\O)$ curves in $\Ell(\O)$, thus we know exactly how many
+curves there are in each level of the volcano; for example we know
+that there will be exactly $h(\O_K)$ distinct trees in the Atkin
+case. %
+What we do not know yet, is the number of connected components in the
+Elkies case. %
+To address this question, we shall go back to complex multiplication.
+
+\section{Complex multiplication}
+\label{sec:compl-mult-2}
+
+We have already seen how the theory of complex multiplication gives a
+correspondence between the class group $\Cl(\O)$ and the set of CM
+elliptic curves $\Ell(\O)$. %
+However, the (omitted) proof of Theorem~\ref{th:compl-mult} provides
+much more than a simple bijection of sets: it constructs an
+\emph{action} of the group $\Cl(\O)$ on the set $\Ell(\O)$. %
+We now complete our study of complex multiplication by defining the
+group action, and then constructing \emph{Cayley graphs} associated to
+it.
+
+We let $\O$ be an order in a number field $K$, and we assume that
+$\Ell_q(\O)$ is non-empty. %
+Because curves in $\Ell_q(\O)$ are connected exclusively by horizontal
+(cyclic) isogenies, we will call it a \emph{horizontal isogeny class}.
+
+Let $E∈\Ell_q(\O)$, let $\a$ be an invertible ideal in $\O$, of norm
+coprime to $q$, and define the \emph{${\a}$-torsion} subgroup of $E$
+as
+\begin{equation*}
+  \label{eq:a-torsion}
+  E[\a] = \{P ∈ E(\bar{\F}_q) \mid σ(P) = 0
+  \text{ for all } σ ∈ \a \}.
+\end{equation*}
+This subgroup is the kernel of a separable isogeny
+$\phi_{\a}:E→E/E[\a]$; it can be proven that $\phi_{\a}$ is
+horizontal, and that its degree is the \emph{norm} of $\a$. %
+By composing with an appropriate purely inseparable isogeny, the
+definition of $ϕ_\a$ is easily extended to invertible ideals of any
+norm.
+
+Writing $\a·E$ for the isomorphism class of the image of $ϕ_\a$, we
+get an action $·:\mathcal{I}(\O)×\Ell_q(\O)→\Ell_q(\O)$ of the group
+of invertible ideals of $\O$ on $\Ell_q(\O)$. %
+It is then apparent that endomorphisms of $E$ correspond to principal
+ideals in $\O$, and act trivially on $\Ell_q(\O)$. %
+Since the action factors through principal ideals, it natural to
+consider the induced action of $\Cl(\O)$ on $\Ell_q(\O)$. %
+The main theorem of complex multiplication states that this action is
+\emph{simply transitive}. %
+
+\begin{theorem}[Complex multiplication]
+  Let $\F_q$ be a finite field, $\O⊂ℚ(\sqrt{-D})$ an order in a
+  quadratic imaginary field, and $\Ell_q(\O)$ the set of
+  $\bar{\F}_q$-isomorphism classes of curves with complex
+  multiplication by $\O$. %
+
+  Assume $\Ell_q(\O)$ is non-empty, then it is a \emph{principal
+    homogeneous space} for the class group $\Cl(\O)$, under the action
+  \begin{align*}
+    \Cl(\O) × \Ell_q(\O) &→ \Ell_q(\O),\\
+    (\a,E)  &↦ \a·E
+  \end{align*}
+  defined above.
+\end{theorem}
+
+Being a principal homogeneous space (also called a \emph{torsor})
+means that, for any fixed base point $E∈\Ell_q(\O)$, there is a
+bijection
+\[
+\begin{aligned}
+\Cl(\O) &\longrightarrow \Ell_q(\O) \\
+\text{Ideal class of }\a &\longmapsto \text{Isomorphism class of }\a\cdot E.
+\end{aligned}
+\]
+This confirms what we already knew, that $\#\Ell_q(\O)=h(\O)$, but
+also answers our question on the size of $ℓ$-isogeny volcanoes.
+
+\begin{corollary}
+  Let $\O$ be a quadratic imaginary order, and assume that
+  $\Ell_q(\O)$ is non-empty. %
+  Let $ℓ$ be a prime such that $\O$ is $ℓ$-maximal, i.e., such that
+  $ℓ$ does not divide the conductor of $\O$. %
+  All $ℓ$-isogeny volcanoes of curves in $\Ell_q(\O)$ are
+  isomorphic. %
+  Furthermore, one of the following is true.
+  \begin{enumerate}
+  \item[(0)] If the ideal $(ℓ)$ is prime in $\O$, then there are
+    $h(\O)$ distinct $ℓ$-isogeny volcanoes of Atkin type, with surface
+    in $\Ell_q(\O)$.
+  \item[(1)] If $(ℓ)$ is ramified in $\O$, i.e., if it decomposes as a
+    square $\frak l^2$, then there are $h(\O)/2$ distinct $ℓ$-isogeny
+    volcanoes of ramified type, with surface in $\Ell_q(\O)$.
+  \item[(2)] If $(ℓ)$ splits as a product $\frak l·\hat{\frak l}$ of
+    two distinct prime ideals, then there are $h(\O)/n$ distinct
+    $ℓ$-isogeny volcanoes of Elkies type, with craters in $\Ell_q(\O)$
+    of size $n$, where $n$ is the order of $\frak l$ in $\Cl(\O)$.
+  \end{enumerate}
+\end{corollary}
+
+But we can extract even more information from the group action. %
+Assume that the Frobenius endomorphism splits modulo $ℓ$, i.e., that
+\[π^2 - tπ + q = (π - λ)(π - μ) \mod\ell\] %
+for two distinct eigenvalues $λ,μ$. %
+Associate to $λ$ and $μ$ the prime ideals $\a=(π-λ,ℓ)$ and
+$\hat{\a}=(π-μ,ℓ)$, both of norm $ℓ$; then $E[\a]$ is the eigenspace
+of $λ$, and $E[\hat{\a}]$ that of $μ$. %
+Because $\a\hat{\a} = \hat{\a}\a = (ℓ)$, the ideal classes $\a$ and
+$\hat{\a}$ are the inverse of one another in $\Cl(\O)$, therefore the
+isogenies $ϕ_{\a}:E→\a·E$ and $ϕ_{\hat{\a}}:\a·E→E$ are dual to one
+another (up to isomorphism). %
+
+Hence, we see that the eigenvalues $λ$ and $μ$ define two opposite
+directions on the $\ell$-isogeny crater, independent of the starting
+curve, as shown in Figure~\ref{fig:cycle}. %
+The size of the crater is the order of $(π-λ,ℓ)$ in $\Cl(\O)$, and the
+set $\Ell_q(\O)$ is partitioned into craters of equal size. %
+What we have here is a very basic example of \emph{Cayley graph}.
+
+\begin{figure}[t]
+  \begin{minipage}{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \def\crater{7}
+      \foreach \i in {1,...,\crater} {
+        \begin{scope}[shorten >=0.1cm,->]
+          \draw[blue!60!black] (360/\crater*\i : 1.95cm) -- (360/\crater*\i+360/\crater : 1.95cm);
+          \draw[blue!60!white] (360/\crater*\i+360/\crater : 2.05cm) -- (360/\crater*\i : 2.05cm);
+        \end{scope}
+        \draw[blue!60!black] (360/\crater*\i+180/\crater:1.6cm) node {\small$λ$};
+        \draw[blue!60!white] (360/\crater*\i+180/\crater:2cm) node {\small$μ$};
+      }
+      \foreach \i in {1,...,\crater} {
+        \draw[fill] (360/\crater*\i:2cm) circle (2pt);
+      }
+    \end{tikzpicture}
+    \caption{An isogeny cycle for an Elkies prime $ℓ$, with edge directions
+      associated with the Frobenius eigenvalues $λ$ and $μ$.}
+    \label{fig:cycle}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \def\crater{12}
+      \def\jumpa{-8}
+      \def\jumpb{9}
+      \def\diam{2cm}
+
+      \foreach \i in {1,...,\crater} {
+        \draw[blue] (360/\crater*\i : \diam) to[bend right] (360/\crater*\i+360/\crater : \diam);
+        \draw[red] (360/\crater*\i : \diam) to[bend right] (360/\crater*\i+\jumpa*360/\crater : \diam);
+        \draw[green] (360/\crater*\i : \diam) to[bend right=50] (360/\crater*\i+\jumpb*360/\crater : \diam);
+      }
+      \foreach \i in {1,...,\crater} {
+        \pgfmathparse{int(mod(2^\i,13))}
+        \let\exp\pgfmathresult
+        \draw[fill] (360/\crater*\i: \diam) circle (2pt);% +(360/\crater*\i: 0.4) node{$x^{\exp}$};
+      }
+    \end{tikzpicture}
+    \caption{Graph of horizontal isogenies on 12 curves, with isogenies
+      of three different degrees (represented in different colors).}
+    \label{fig:cayley}
+  \end{minipage}
+\end{figure}
+
+
+\begin{definition}[Cayley graph]
+  Let $G$ be a group and $S⊂G$ be a symmetric subset (i.e., $s∈S$
+  implies $s^{-1}∈S$). %
+  The \emph{Cayley graph} of $(G,S)$ is the undirected graph whose
+  vertices are the elements of $G$, and such that there is an edge
+  between $g$ and $sg$ if and only if $s∈S$. %
+\end{definition}
+
+The graph in Figure~\ref{fig:cycle} is isomorphic to a Cayley graph of
+$\Cl(\O)$ for an edge set $S=\{\a,\hat\a\}$, but, unlike the Cayley
+graph itself, its vertices are in bijection with $\Cl(\O)$ only up to
+automorphism.%
+\footnote{Said otherwise, any vertex could correspond to $1$, and we
+  do not know which.} %
+These kind of graphs obtained from group actions are sometimes called
+\emph{Schreier graphs} to distinguish them from the more specific
+case.
+
+In the sequel, we shall work with a larger edge set $S$, which will
+amount to ``glue many isogeny craters together'', as shown in
+Figure~\ref{fig:cayley}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+\section{Quaternionic multiplication}
+
+Supersingular curves are generally not covered
+by the theory of complex multiplication. %
+For most of them, indeed, the Frobenius endomorphism acts like an element of
+$ℤ$, instead of acting like a ``complex multiplier''. %
+
+Supersingular curves are defined by the fact that multiplication by
+$p$ is purely inseparable, i.e., $E[p]$ is trivial. %
+This implies that the curve $E^{(p^2)}$ is isomorphic to $E$, and thus
+that both are isomorphic to a curve defined over $\F_{p^2}$. %
+
+When $E$ is defined over $\F_p$, we can still use what we know about
+complex multiplication. %
+Indeed, these curves have trace $0$, and thus the Frobenius
+endomorphism has two distinct eigenvalue $±\sqrt{-p}$, implying that
+$\End_{\F_p}(E)$, the ring of $\F_p$-rational endomorphisms, is
+isomorphic to an order in $ℚ(\sqrt{-p})$.
+
+When $E$ is defined over $\F_{p^2}$, however,%
+\footnote{This also applies to curves defined over $\F_p$, when we
+  extend scalars.} %
+its Frobenius endomorphism must satisfy $π^2-tπ+p^2=0$, with $t$ a
+multiple of $p$; hence, by Hasse's theorem, $t∈\{0,±p,±2p\}$. %
+The cases $t∈\{0,±p\}$ only happen for a very limited number of curves
+with $j$-invariant $0$ or $1728$; we are thus mostly interested in the
+case $t=±2p$, i.e., $π=±p$. %
+Then, the \emph{full} endomorphism ring $\End(E)$ (i.e., not
+restricted to $\F_p$-rational endomorphisms) is isomorphic to a
+maximal order the quaternion algebra $B_{p,∞}$ ramified at $p$ and at
+infinity. %
+
+\begin{example}
+  The elliptic curve $y^2=x^3+x$ has supersingular reduction at all
+  primes $p=3\bmod 4$. %
+  Its ring of $\F_p$-rational endomorphisms is generated by
+  $π=\sqrt{-p}$, and it is not maximal in $ℚ(\sqrt{-p})$.
+
+  The automorphism $ι:(x,y)↦(-x,iy)$ is only defined over $\F_{p^2}$,
+  and does not commute with $π$. %
+  The full endomorphism ring is isomorphic to the order generated by
+  $π$ and $ι$ inside the quaternion algebra $B_{p,∞}$.
+\end{example}
+
+Like the CM case, isogenies are in correspondence with (left) ideals
+of $\O$. %
+Unlike the CM case, $B_{p,∞}$ has more than one maximal order, and
+there is no concept of \emph{depth}, thus no ascending, descending or
+horizontal isogenies. %
+
+More precisely, let $\a⊂Β_{p,∞}$ a lattice, the \emph{left order} of $\a$ is
+the ring $\O(\a)=\{x∈B_{p,∞}\mid x\a⊂\a\}$. %
+Two lattices $\a,\frak b$ are said to be \emph{right isomorphic} if
+$\a=\frak b x$ for some $x∈B_{p,∞}$. %
+If $\O⊂B_{p,∞}$ is an order, $\a$ is called a \emph{left ideal} of $\O$ if
+$\O⊂\O(\a)$; the \emph{left class set} $\Cl(\O)$ is the set of right
+ideal classes of left ideals of $\O$. %
+The order $\#\Cl(\O)$ only depends on the quaternion algebra, and is
+called the \emph{class number} of $B_{p,∞}$. %
+Analogous definitions can be given by swapping left and right; we
+refer to~\cite[Chapter~42]{Voight2018} for more properties and
+definitions. %
+
+Like in the CM case, the set $\Cl(\O)$ is in bijection with the vertex
+set of a supersingular graph. %
+
+\begin{theorem}
+  Let $B_{p,∞}$ be the quaternion algebra ramified at $p$ and
+  infinity, and let $\O⊂B_{p,∞}$ be a maximal order. %
+  Let $E_0/F_{p^2}$ be a supersingular elliptic curve with
+  $\End(E_0)≃\O$. %
+  \begin{enumerate}
+  \item The number of isomorphism classes of supersingular elliptic
+    curves is equal to the class number of $B_{p,∞}$.
+  \item There is a one-to-one correspondence $\a↦\a·E_0$ between
+    $\Cl(\O)$ and the set of isomorphism classes of supersingular
+    elliptic curves, such that $\End(\a·E_0)$ is isomorphic to the
+    right order of $\a$.
+  \end{enumerate}
+\end{theorem}
+
+This theorem can be turned into an equivalence of categories,
+see~\cite[Theorem~45]{kohel}. %
+Thanks to the Eichler mass formula, we obtain the exact size of the
+isogeny class. %
+
+\begin{corollary}
+  The number of isomorphism classes of supersingular elliptic curves
+  is equal to
+  \begin{equation*}
+    \left\lfloor\frac{p}{12}\right\rfloor +
+    \begin{cases}
+      0 &\text{if $p=1\mod 12$,}\\
+      1 &\text{if $p=5,7\mod 12$,}\\
+      2 &\text{if $p=11\mod 12$.}
+    \end{cases}
+  \end{equation*}
+\end{corollary}
+
+We thus have a bound on the size of a supersingular isogeny graph over
+$\F_{p^2}$. %
+Since the Frobenius acts like a scalar, all isogenies are defined over
+$\F_{p^2}$, hence supersingular $ℓ$-isogeny graphs are necessarily
+$(ℓ+1)$-regular. %
+In the next section we will learn that the supersingular $ℓ$-isogeny
+graph has a unique connected component. %
+
+
+\section{Expander graphs from isogenies}
+
+We are finally introducing two families of isogeny graphs suitable
+for cryptographic use. %
+We will want them to somehow ``behave like large random graphs'',
+while at the same time having a strong algebraic structure: the first
+is needed for security, the second to produce complex protocols such
+as key exchange. %
+
+The random-like properties of isogeny graphs are typically expressed
+in terms of \emph{expansion}. %
+An undirected graph on $n$ vertices has $n$ real eigenvalues
+$λ_1≥\cdots≥λ_n$, and, if the graph is $k$-regular, it can be proven
+that $k=λ_1≥λ_n≥-k$. %
+Because of this equality, $λ_1$ is called the \emph{trivial
+  eigenvalue}. %
+An \emph{expander graph} is a $k$-regular graph such that its
+non-trivial eigenvalues are bounded away, in absolute value, from
+$k$. %
+We recall here some basic facts about expanders; for an in depth
+review, see~\cite{Goldreich2011,tao2011expander}.
+
+\begin{definition}[Expander graph]
+  Let $ε>0$ and $k≥1$. A $k$-regular graph is called a (one-sided)
+  \emph{$ε$-expander} if
+  \[λ_2≤(1-ε)k;\]
+  and a \emph{two-sided $ε$-expander} if it also satisfies
+  \[λ_n≥-(1-ε)k.\] %
+  A sequence $G_i=(V_i,E_i)$ of $k$-regular graphs with $\#V_i→∞$ is
+  said to be a one-sided (resp. two-sided) \emph{expander family} if
+  there is an $ε>0$ such that $G_i$ is a one-sided (resp. two-sided)
+  $ε$-expander for all sufficiently large $i$.
+\end{definition}
+
+\begin{theorem}[Ramanujan graph]
+  Let $k≥1$, and let $G_i$ be a sequence of $k$-regular graphs. %
+  Then
+  \[\max(|λ_2|,|λ_n|) ≥ 2\sqrt{k-1} - o(1),\]
+  as $n→∞$. %
+  A graph such that $|λ_j|≤2\sqrt{k-1}$ for any $λ_j$ except $λ_1$ is
+  called a \emph{Ramanujan graph}.
+\end{theorem}
+
+Two related properties of expander graphs are relevant to us. %
+First, they have \emph{short diameter}: as $n→∞$ the diameter of an
+expander is bounded by $O(\log n)$, with the constant depending only
+on $k$ and $ε$. %
+Second, expanders have \emph{rapidly mixing walks}: loosely speaking,
+the next proposition says that random walks of length close to the
+diameter terminate on any vertex with probability close to uniform. %
+
+\begin{proposition}[Mixing theorem~(\cite{jao+miller+venkatesan09})]
+  Let $G=(V,E)$ be a $k$-regular two-sided $ε$-expander. %
+  Let $F⊂V$ be any subset of the vertices of $G$, and let $v$ be any
+  vertex in $V$. %
+  Then a random walk of length at least
+  \[\frac{\log(\#F^{1/2}/(2\#V))}{\log(1-ε)}\] %
+  starting from $v$ will land in $F$ with probability at least
+  $\#F/(2\#V)$.
+\end{proposition}
+
+The walk length in the mixing theorem is also called the \emph{mixing
+  length} of the expander graph. %
+
+Random regular graphs typically make good expanders, but only a
+handful of deterministic constructions is known, most of them based on
+Cayley graphs~\cite{LubPS,chung1989diameters,Goldreich2011}. %
+We just introduced Cayley graphs constructed from isogeny craters in
+Section~\ref{sec:compl-mult-2}, and, unsurprisingly, they turn out to
+be expanders, provided we add enough edges to them.
+
+\begin{theorem}[{Jao, Miller, Venkatesan~\cite{jao+miller+venkatesan09}}]
+  \label{th:ord-exp}
+  Let $\O$ be a quadratic imaginary order, and assume that
+  $\Ell_q(\O)$ is non-empty. %
+  Let $δ>0$, and define the graph $G$ on $\Ell_q(\O)$ where two
+  vertices are connected whenever there is a horizontal isogeny
+  between them of prime degree bounded by $O((\log q)^{2+δ})$.
+
+  Then $G$ is a regular graph and, under the generalized Riemann
+  hypothesis for the characters of $\Cl(\O)$, there exists an $ε$
+  independent of $\O$ and $q$ such that $G$ is a two-sided
+  $ε$-expander.
+\end{theorem}
+
+The theorem is readily generalized to supersingular
+curves and isogenies defined over $\F_p$. %
+
+A radically different construction of expander graphs is given by
+graphs of supersingular curves \emph{defined over $\F_{p^2}$} with
+$ℓ$-isogenies, for a \emph{single} prime $ℓ≠p$. %
+Two examples of such graphs are shown in
+Figure~\ref{fig:sup-97-2-3}. %
+This construction is related to LPS
+graphs~\cite{LubPS,Lub,cryptoeprint:2018:593}, but is not isomorphic
+to a Cayley graph. %
+
+\begin{theorem}[{Mestre~\cite{mestre86}, Pizer~\cite{pizer1,pizer2}}]
+  \label{th:ss-exp}
+  Let $\ell≠p$ be two primes. %
+  The $ℓ$-isogeny graph of supersingular curves in $\bar\F_p$, is
+  connected, $(ℓ+1)$-regular, and has the Ramanujan property.
+\end{theorem}
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}
+    \def\graph{
+      \begin{scope}[every node/.style={fill,black,circle,inner sep=2pt}]
+        \node at (0,0)  (1){};
+        \node at (0,4) (20){};
+        \node at (2,1)  (16z){};
+        \node at (-2,1)  (81z){};
+        \node at (-1,2) (77z){};
+        \node at (1,2)  (20z){};
+        \node at (-2,3)  (85z){};
+        \node at (2,3)  (12z){};
+      \end{scope}
+    }
+    
+    \graph
+    \begin{scope}[blue,every loop/.style={looseness=50}]
+      \path (1) edge (20) edge (16z) edge (81z);
+      \path (20) edge[loop left] (20) edge[loop right] (20);
+      \path (16z) edge (81z) edge (77z);
+      \path (81z) edge (20z);
+      \path (77z) edge (20z) edge (85z);
+      \path (20z) edge (12z);
+      \path (12z) edge[bend right=10] (85z) edge[bend left=10] (85z);
+    \end{scope}
+        
+    \begin{scope}[xshift=6cm]
+      \graph
+      \begin{scope}[red]
+        \path (1) edge (85z) edge (81z) edge (12z) edge (16z);
+        \path (20) edge (85z) edge (77z) edge (20z) edge (12z);
+        \path (81z) edge (85z) edge (77z) edge (16z);
+        \path (85z) edge (12z);
+        \path (12z) edge (16z);
+        \path (16z) edge (20z);
+        \path (20z) edge[bend right=10] (77z) edge[bend left=10] (77z);
+      \end{scope}
+    \end{scope}
+  \end{tikzpicture}
+  \caption{Supersingular isogeny graphs of degree 2 (left, blue) and 3
+    (right, red) on $\F_{97^2}$.}
+  \label{fig:sup-97-2-3}
+\end{figure}
+
+
+Both of these isogeny graphs will be used in the next part to
+build key exchange protocols. %
+For reasons that will be apparent soon, there will only be a mild
+connection between the expansions properties of the graphs and the
+security of the protocols: the expansion theorems will mostly serve as
+a blueprint for devising good cryptosystems, but will have no provable
+impact. %
+
+
+\section*{Exercises}
+
+\begin{exercise}
+  Prove Corollary~\ref{coro:serre-tate}.
+\end{exercise}
+
+\begin{exercise}
+  Prove that the dual of a horizontal isogeny is horizontal, and that
+  the dual of a descending isogeny is ascending.
+\end{exercise}
+
+\begin{exercise}
+  Prove that the height of a volcano of $ℓ$-isogenies is $v_ℓ(f_π)$,
+  the $ℓ$-adic valuation of the Frobenius endomorphism.
+\end{exercise}
+
+\begin{exercise}
+  Let $X^2-tX-q$ be the minimal polynomial of $π$, and suppose that it
+  splits as $(X-λ)(X-μ)$ in $ℤ_ℓ$ (the ring of $ℓ$-adic integers). %
+  Prove that the volcano of $ℓ$ isogenies has height $v_ℓ(λ-μ)$.
+\end{exercise}
+
+\begin{exercise}
+  \label{ex:group-struct}
+  Prove that $E[ℓ]⊂E(\F_q)$ implies $ℓ|(q-1)$.
+\end{exercise}
+
+\begin{exercise}
+  Find a prime power $q$ and an elliptic curve $E/\F_q$ such that the
+  $3$-isogeny volcano of $E$ is the same as the one in
+  Figure~\ref{fig:volcano}.
+\end{exercise}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
